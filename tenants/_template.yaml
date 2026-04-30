@@ -24,10 +24,6 @@ spec:
     - kind: Group
       name: naas-TEAM_NAME-admin    # Authentik group for tenant owners
 
-  # Auto-assign namespaces bearing this label to the tenant
-  namespaceSelectorLabels:
-    naas.io/team: TEAM_NAME
-
   # ── Tenant aggregate quota ────────────────────────────────────────────────
   # Enforced by Capsule across ALL namespaces this team owns, combined.
   # Kyverno's per-namespace quotas (from naas.io/env) also apply — both limits

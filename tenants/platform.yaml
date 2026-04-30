@@ -13,9 +13,6 @@ spec:
     - kind: Group
       name: naas-platform-admin
 
-  namespaceSelectorLabels:
-    naas.io/team: platform
-
   # ── Tenant aggregate quota (large tier) ──────────────────────────────────
   resourceQuotas:
     scope: Tenant

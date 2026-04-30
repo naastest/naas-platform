@@ -39,9 +39,10 @@ spec:
           subjects:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
-              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-admin"
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-admin"
 
     - name: generate-developer-rolebinding
+
       match:
         any:
           - resources:
@@ -67,7 +68,7 @@ spec:
           subjects:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
-              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-dev"
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-dev"
 
     - name: generate-viewer-rolebinding
       match:
@@ -95,4 +96,4 @@ spec:
           subjects:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
-              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-viewer"
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-viewer"

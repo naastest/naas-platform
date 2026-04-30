@@ -7,9 +7,9 @@ server:
     ingressClassName: nginx
     hostname: argocd.naas.local
     annotations:
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    tls: true
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    tls: false
   config:
     # OIDC for Authentik — clientSecret is set via Sealed Secret after Authentik is up
     oidc.config: |
@@ -31,7 +31,7 @@ server:
 
 configs:
   params:
-    server.insecure: false
+    server.insecure: true
   secret:
     # Rotate after first login. ArgoCD creates argocd-initial-admin-secret automatically.
     argocdServerAdminPassword: ""

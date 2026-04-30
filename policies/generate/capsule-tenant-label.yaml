@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-capsule-tenant-label
+  annotations:
+    policies.kyverno.io/title: Stamp Capsule Tenant Label on NaaS Namespaces
+    policies.kyverno.io/category: NaaS Generate
+    policies.kyverno.io/description: >-
+      Adds capsule.clastix.io/tenant: {team} to any namespace that carries naas.io/team,
+      so Capsule can enforce aggregate quotas and network policies across all team namespaces.
+spec:
+  rules:
+    - name: add-capsule-tenant-label
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              capsule.clastix.io/tenant: "{{request.object.metadata.labels.\"naas.io/team\"}}"

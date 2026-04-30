@@ -67,7 +67,7 @@ profiles:
           - name: authentik
             repo: https://charts.goauthentik.io
             remoteChart: authentik
-            version: 2025.2.4
+            version: 2026.2.2
             namespace: authentik
             createNamespace: true
             valuesFiles:

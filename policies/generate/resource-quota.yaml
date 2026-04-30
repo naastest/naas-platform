@@ -28,7 +28,7 @@ spec:
           metadata:
             labels:
               naas.io/managed-by: kyverno
-              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+              naas.io/cost-center: "{{request.object.metadata.labels.\"naas.io/cost-center\"}}"
           spec:
             hard:
               requests.cpu: "4"
@@ -66,7 +66,7 @@ spec:
           metadata:
             labels:
               naas.io/managed-by: kyverno
-              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+              naas.io/cost-center: "{{request.object.metadata.labels.\"naas.io/cost-center\"}}"
           spec:
             hard:
               requests.cpu: "8"
@@ -104,7 +104,7 @@ spec:
           metadata:
             labels:
               naas.io/managed-by: kyverno
-              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+              naas.io/cost-center: "{{request.object.metadata.labels.\"naas.io/cost-center\"}}"
           spec:
             hard:
               requests.cpu: "16"
@@ -142,7 +142,7 @@ spec:
           metadata:
             labels:
               naas.io/managed-by: kyverno
-              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+              naas.io/cost-center: "{{request.object.metadata.labels.\"naas.io/cost-center\"}}"
           spec:
             hard:
               requests.cpu: "32"

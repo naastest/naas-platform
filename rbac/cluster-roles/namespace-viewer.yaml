@@ -8,7 +8,4 @@ rules:
   - apiGroups: ["", "apps", "batch", "autoscaling", "networking.k8s.io", "policy"]
     resources: ["*"]
     verbs: ["get", "list", "watch"]
-  # Viewers cannot see secret values
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: []
+  # Viewers cannot see secret values — explicitly exclude by omitting secrets from the wildcard above

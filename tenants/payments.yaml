@@ -22,9 +22,6 @@ spec:
     - kind: Group
       name: naas-payments-admin
 
-  namespaceSelectorLabels:
-    naas.io/team: payments
-
   # ── Tenant aggregate quota (medium tier) ─────────────────────────────────
   resourceQuotas:
     scope: Tenant

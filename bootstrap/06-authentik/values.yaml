@@ -6,6 +6,8 @@ authentik:
     email: "admin@naas.local"
     password: "change-me-on-first-login"
     token: ""
+  postgresql:
+    password: "authentik-pg-local"
 
 server:
   ingress:

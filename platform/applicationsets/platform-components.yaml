@@ -24,7 +24,7 @@ spec:
       labels:
         naas.io/managed-by: platform-applicationset
     spec:
-      project: platform
+      project: default
       source:
         repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
