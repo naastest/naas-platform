@@ -1,0 +1,104 @@
+# Extra Kyverno policies applied to namespaces with naas.io/compliance=pci.
+# Enforces strict network isolation and Pod Security Admission labels.
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pci-label-pod-security-restricted
+  annotations:
+    policies.kyverno.io/title: PCI - Enforce Pod Security Restricted
+    policies.kyverno.io/category: NaaS Compliance
+spec:
+  rules:
+    - name: label-namespace-restricted
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/compliance: pci
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              pod-security.kubernetes.io/enforce: restricted
+              pod-security.kubernetes.io/enforce-version: latest
+              pod-security.kubernetes.io/warn: restricted
+              pod-security.kubernetes.io/warn-version: latest
+              pod-security.kubernetes.io/audit: restricted
+              pod-security.kubernetes.io/audit-version: latest
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pci-deny-external-egress
+  annotations:
+    policies.kyverno.io/title: PCI - Deny External Egress
+    policies.kyverno.io/category: NaaS Compliance
+spec:
+  rules:
+    - name: generate-pci-egress-deny
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/compliance: pci
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: pci-deny-external-egress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+              naas.io/compliance: pci
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Egress
+            egress:
+              # Only allow egress within the same namespace
+              - to:
+                  - podSelector: {}
+              # Allow DNS to kube-system
+              - to:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: kube-system
+                ports:
+                  - port: 53
+                    protocol: UDP
+                  - port: 53
+                    protocol: TCP
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pci-disallow-hostnetwork
+  annotations:
+    policies.kyverno.io/title: PCI - Disallow Host Network
+    policies.kyverno.io/category: NaaS Compliance
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-hostnetwork
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchLabels:
+                  naas.io/compliance: pci
+      validate:
+        message: "PCI namespaces do not allow hostNetwork, hostPID, or hostIPC."
+        pattern:
+          spec:
+            =(hostNetwork): "false"
+            =(hostPID): "false"
+            =(hostIPC): "false"

@@ -1,0 +1,58 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-naas-labels
+  annotations:
+    policies.kyverno.io/title: Require NaaS Labels
+    policies.kyverno.io/category: NaaS
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Namespaces must carry all required naas.io/* labels before creation is admitted.
+      This is the admission gate for the entire NaaS system.
+      Excluded: system namespaces and namespaces already carrying the platform-system label.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-naas-labels
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+      exclude:
+        any:
+          - resources:
+              kinds: [Namespace]
+              names:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - argocd
+                - kyverno
+                - cert-manager
+                - ingress-nginx
+                - authentik
+                - capsule-system
+                - monitoring
+                - sealed-secrets
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/platform-system: "true"
+      validate:
+        message: >
+          Namespace is missing required naas.io/* labels.
+          Required: team, env (dev|test|acceptance|production), tier (backend|frontend|data|infra),
+          app, cost-center, compliance (standard|pci|hipaa), owner-email.
+          See: docs/label-schema.md
+        pattern:
+          metadata:
+            labels:
+              naas.io/team: "?*"
+              naas.io/env: "dev | test | acceptance | production"
+              naas.io/tier: "backend | frontend | data | infra"
+              naas.io/app: "?*"
+              naas.io/cost-center: "?*"
+              naas.io/compliance: "standard | pci | hipaa"
+              naas.io/owner-email: "?*"

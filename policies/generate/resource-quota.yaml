@@ -1,0 +1,154 @@
+# Generates a ResourceQuota in every NaaS-managed namespace based on naas.io/env.
+# Quotas scale with environment: dev (small) → test → acceptance → production (large).
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-resource-quota-dev
+  annotations:
+    policies.kyverno.io/title: Generate ResourceQuota (dev)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-quota-dev
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/env: dev
+      generate:
+        apiVersion: v1
+        kind: ResourceQuota
+        name: naas-quota
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+          spec:
+            hard:
+              requests.cpu: "4"
+              requests.memory: 8Gi
+              limits.cpu: "8"
+              limits.memory: 16Gi
+              pods: "50"
+              services: "20"
+              persistentvolumeclaims: "5"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-resource-quota-test
+  annotations:
+    policies.kyverno.io/title: Generate ResourceQuota (test)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-quota-test
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/env: test
+      generate:
+        apiVersion: v1
+        kind: ResourceQuota
+        name: naas-quota
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+          spec:
+            hard:
+              requests.cpu: "8"
+              requests.memory: 16Gi
+              limits.cpu: "16"
+              limits.memory: 32Gi
+              pods: "80"
+              services: "30"
+              persistentvolumeclaims: "10"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-resource-quota-acceptance
+  annotations:
+    policies.kyverno.io/title: Generate ResourceQuota (acceptance)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-quota-acceptance
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/env: acceptance
+      generate:
+        apiVersion: v1
+        kind: ResourceQuota
+        name: naas-quota
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+          spec:
+            hard:
+              requests.cpu: "16"
+              requests.memory: 32Gi
+              limits.cpu: "32"
+              limits.memory: 64Gi
+              pods: "100"
+              services: "40"
+              persistentvolumeclaims: "15"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-resource-quota-production
+  annotations:
+    policies.kyverno.io/title: Generate ResourceQuota (production)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-quota-production
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/env: production
+      generate:
+        apiVersion: v1
+        kind: ResourceQuota
+        name: naas-quota
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+              naas.io/cost-center: "{{request.object.metadata.labels['naas.io/cost-center']}}"
+          spec:
+            hard:
+              requests.cpu: "32"
+              requests.memory: 64Gi
+              limits.cpu: "64"
+              limits.memory: 128Gi
+              pods: "200"
+              services: "60"
+              persistentvolumeclaims: "20"

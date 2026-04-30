@@ -1,0 +1,40 @@
+# Manages platform components that ArgoCD controls after bootstrap:
+# Kyverno policies, ArgoCD config, cluster registrations.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-components
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - component: kyverno-policies
+            path: policies
+          - component: argocd-config
+            path: platform/argocd-config
+          - component: rbac
+            path: rbac
+          - component: authentik-config
+            path: authentik
+  template:
+    metadata:
+      name: "platform-{{.component}}"
+      labels:
+        naas.io/managed-by: platform-applicationset
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        targetRevision: HEAD
+        path: "{{.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true

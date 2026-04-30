@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privilege-escalation
+  annotations:
+    policies.kyverno.io/title: Disallow Privilege Escalation
+    policies.kyverno.io/category: NaaS Baseline
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      validate:
+        message: "Privilege escalation is not allowed. Set allowPrivilegeEscalation=false."
+        pattern:
+          spec:
+            =(initContainers):
+              - securityContext:
+                  allowPrivilegeEscalation: "false"
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: "false"

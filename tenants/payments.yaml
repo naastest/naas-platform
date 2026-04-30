@@ -1,0 +1,179 @@
+# ============================================================
+# Capsule Tenant Template
+# ============================================================
+# Copy this file to tenants/{team-name}.yaml and fill in placeholders.
+# Tenants require platform team approval.
+# See docs/onboarding.md for the full onboarding flow.
+# ============================================================
+---
+# Capsule Tenant — groups namespaces under this team and enforces cross-namespace limits.
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: payments
+  labels:
+    naas.io/team: payments
+spec:
+  owners:
+    - kind: Group
+      name: naas-payments-admin    # Authentik group for tenant owners
+
+  # Auto-assign namespaces bearing this label to the tenant
+  # (Kyverno ensures all team namespaces carry this label)
+  namespaceSelectorLabels:
+    naas.io/team: payments
+
+  # Tenant-level aggregate quota (across all team namespaces combined)
+  resourceQuotas:
+    scope: Tenant
+    items:
+      - hard:
+          count/namespaces: "20"
+          requests.cpu: "200"
+          requests.memory: 400Gi
+          persistentvolumeclaims: "50"
+
+  # Roles granted to team groups in every namespace they own
+  additionalRoleBindings:
+    - clusterRoleName: admin
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-payments-admin
+    - clusterRoleName: edit
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-payments-dev
+    - clusterRoleName: view
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-payments-viewer
+
+  # Default NetworkPolicies applied to all tenant namespaces by Capsule.
+  # Kyverno generates additional policies per compliance tier.
+  networkPolicies:
+    items:
+      - podSelector: {}
+        policyTypes: [Ingress, Egress]
+        ingress:
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    naas.io/team: payments
+        egress:
+          - to:
+              - namespaceSelector:
+                  matchLabels:
+                    naas.io/team: payments
+          - to:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: kube-system
+            ports:
+              - port: 53
+                protocol: UDP
+              - port: 53
+                protocol: TCP
+---
+# ArgoCD AppProject — limits this team's deployment scope to their own namespaces.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: payments
+  namespace: argocd
+  labels:
+    naas.io/team: payments
+    naas.io/managed-by: naas-platform
+spec:
+  description: "NaaS AppProject for team payments"
+
+  # Teams deploy from their own repos only
+  sourceRepos:
+    - "https://github.com/ORG/team-payments-*"  # TODO: update org
+    - "https://charts.bitnami.com/bitnami"
+    - "https://charts.helm.sh/stable"
+
+  # Teams deploy to their own namespaces only, across all DTAP clusters
+  destinations:
+    - name: dev
+      namespace: "payments-*"
+    - name: test
+      namespace: "payments-*"
+    - name: acceptance
+      namespace: "payments-*"
+    - name: production
+      namespace: "payments-*"
+
+  # Teams cannot create cluster-level resources
+  clusterResourceWhitelist: []
+
+  # Namespace-scoped resources teams can deploy
+  namespaceResourceWhitelist:
+    - group: "apps"
+      kind: "*"
+    - group: "batch"
+      kind: "*"
+    - group: ""
+      kind: "Service"
+    - group: ""
+      kind: "ConfigMap"
+    - group: ""
+      kind: "Secret"
+    - group: ""
+      kind: "ServiceAccount"
+    - group: "networking.k8s.io"
+      kind: "Ingress"
+    - group: "autoscaling"
+      kind: "*"
+    - group: "policy"
+      kind: "PodDisruptionBudget"
+
+  # Teams cannot manage: RBAC, NetworkPolicy, ResourceQuota, LimitRange (Kyverno owns those)
+  namespaceResourceBlacklist:
+    - group: "rbac.authorization.k8s.io"
+      kind: "*"
+    - group: "networking.k8s.io"
+      kind: "NetworkPolicy"
+    - group: ""
+      kind: "ResourceQuota"
+    - group: ""
+      kind: "LimitRange"
+    - group: "kyverno.io"
+      kind: "*"
+    - group: "capsule.clastix.io"
+      kind: "*"
+
+  roles:
+    - name: admin
+      description: "Full control over team's applications"
+      policies:
+        - "p, proj:payments:admin, applications, *, payments/*, allow"
+      groups:
+        - "naas-payments-admin"
+    - name: developer
+      description: "Deploy and sync applications"
+      policies:
+        - "p, proj:payments:developer, applications, get, payments/*, allow"
+        - "p, proj:payments:developer, applications, sync, payments/*, allow"
+        - "p, proj:payments:developer, applications, override, payments/*, allow"
+      groups:
+        - "naas-payments-dev"
+    - name: viewer
+      description: "Read-only access"
+      policies:
+        - "p, proj:payments:viewer, applications, get, payments/*, allow"
+      groups:
+        - "naas-payments-viewer"
+
+  # Production changes only during business hours (Mon-Fri 6am-10pm UTC)
+  syncWindows:
+    - kind: allow
+      schedule: "0 6 * * 1-5"
+      duration: 16h
+      applications:
+        - "*-production"
+      clusters:
+        - production
+      manualSync: true

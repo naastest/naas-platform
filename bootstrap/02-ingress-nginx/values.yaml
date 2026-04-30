@@ -1,0 +1,8 @@
+controller:
+  service:
+    type: NodePort
+  ingressClassResource:
+    name: nginx
+    default: true
+  admissionWebhooks:
+    enabled: false   # simplify local setup

@@ -1,0 +1,87 @@
+name: Validate Namespace PR
+
+on:
+  pull_request:
+    paths:
+      - "namespaces/**"
+      - "tenants/**"
+      - "policies/**"
+
+jobs:
+  validate-labels:
+    name: Validate namespace label schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml==6.0.2
+
+      - name: Validate namespace labels
+        run: python3 scripts/validate-namespace-labels.py namespaces/
+
+  kyverno-dry-run:
+    name: Kyverno policy dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        run: |
+          curl -sL https://github.com/kyverno/kyverno/releases/download/v1.13.4/kyverno-cli_v1.13.4_linux_x86_64.tar.gz | tar xz
+          sudo mv kyverno /usr/local/bin/
+          kyverno version
+
+      - name: Find changed namespace files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'namespaces/**/*.yaml' | tr '\n' ' ')
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Run Kyverno dry-run on changed files
+        if: steps.changed.outputs.files != ''
+        run: |
+          for f in ${{ steps.changed.outputs.files }}; do
+            echo "==> Checking $f"
+            kyverno apply policies/baseline/ --resource "$f" || exit 1
+          done
+
+  pr-summary:
+    name: Post namespace provisioning summary
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml==6.0.2
+
+      - name: Generate summary
+        id: summary
+        run: |
+          python3 scripts/generate-pr-summary.py namespaces/ >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync(process.env.GITHUB_STEP_SUMMARY, 'utf8');
+            if (!summary.trim()) return;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## NaaS Namespace Provisioning Preview\n\n${summary}`
+            });

@@ -1,0 +1,25 @@
+admissionController:
+  replicas: 1   # single-replica for local dev
+backgroundController:
+  replicas: 1
+cleanupController:
+  replicas: 1
+reportsController:
+  replicas: 1
+config:
+  webhooks:
+    namespaceSelector:
+      matchExpressions:
+        # Exclude system namespaces from Kyverno admission (prevents chicken-and-egg on bootstrap)
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - kube-public
+            - kube-node-lease
+            - argocd
+            - kyverno
+            - cert-manager
+            - ingress-nginx
+            - authentik
+            - capsule-system

@@ -1,0 +1,29 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-hostpath
+  annotations:
+    policies.kyverno.io/title: Restrict HostPath Volumes
+    policies.kyverno.io/category: NaaS Baseline
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-hostpath
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      validate:
+        message: "HostPath volumes are not allowed in team namespaces."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.volumes[].hostPath | length(@) }}"
+                operator: GreaterThan
+                value: 0

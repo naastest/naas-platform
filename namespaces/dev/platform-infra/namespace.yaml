@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform-infra-dev
+  labels:
+    naas.io/team: platform
+    naas.io/env: dev
+    naas.io/tier: infra
+    naas.io/app: naas-platform
+    naas.io/cost-center: plat-000
+    naas.io/compliance: standard
+    naas.io/owner-email: platform-team@example.com
+  annotations:
+    naas.io/requested-by: platform-team
+    naas.io/jira-ticket: PLAT-0000
+    naas.io/description: "Platform team infrastructure namespace (dev)"

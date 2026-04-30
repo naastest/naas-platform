@@ -1,0 +1,56 @@
+# ============================================================
+# NaaS Namespace Template
+# ============================================================
+# Directory structure: namespaces/{env}/{team}-{tier}/namespace.yaml
+# Namespace name convention: {team}-{tier}-{env}
+#
+# After filling in all placeholders, open a PR targeting main.
+# See docs/onboarding.md for the full request flow.
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  # REQUIRED: must follow the pattern {team}-{tier}-{env}
+  # Must match the directory structure: namespaces/{env}/{team}-{tier}/
+  name: "TEAM_PLACEHOLDER-TIER_PLACEHOLDER-ENV_PLACEHOLDER"
+
+  labels:
+    # ── Ownership ─────────────────────────────────────────────────────────
+    # REQUIRED: lowercase slug [a-z][a-z0-9-]{1,30}
+    # Determines: Capsule Tenant, Authentik groups, ArgoCD AppProject
+    naas.io/team: "TEAM_PLACEHOLDER"
+
+    # ── Environment ────────────────────────────────────────────────────────
+    # REQUIRED: one of dev | test | acceptance | production
+    # Determines: target DTAP cluster, ResourceQuota tier
+    naas.io/env: "ENV_PLACEHOLDER"
+
+    # ── Application tier ───────────────────────────────────────────────────
+    # REQUIRED: one of backend | frontend | data | infra
+    # Determines: LimitRange profile
+    naas.io/tier: "TIER_PLACEHOLDER"
+
+    # ── Application name ───────────────────────────────────────────────────
+    # REQUIRED: slug for the application/service, e.g. checkout-service
+    naas.io/app: "APP_PLACEHOLDER"
+
+    # ── Cost center ────────────────────────────────────────────────────────
+    # REQUIRED: your finance cost center code (propagated to all generated resources)
+    naas.io/cost-center: "COST_CENTER_PLACEHOLDER"
+
+    # ── Compliance level ──────────────────────────────────────────────────
+    # REQUIRED: one of standard | pci | hipaa
+    # Determines: extra Kyverno policies applied to this namespace
+    naas.io/compliance: "COMPLIANCE_PLACEHOLDER"
+
+    # ── Owner email ────────────────────────────────────────────────────────
+    # REQUIRED: team distribution list email for alerts and escalation
+    naas.io/owner-email: "owner-email@example.com"
+
+  annotations:
+    # GitHub username of the person requesting this namespace
+    naas.io/requested-by: ""
+    # Jira/Linear ticket tracking this request
+    naas.io/jira-ticket: ""
+    # Human-readable description of what runs in this namespace
+    naas.io/description: ""

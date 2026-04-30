@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-root
+  namespace: argocd
+  labels:
+    naas.io/managed-by: bootstrap
+  # Finalizer ensures ArgoCD cleans up child apps before removing this app
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+    targetRevision: HEAD
+    path: platform/applicationsets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

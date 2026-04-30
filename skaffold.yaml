@@ -1,0 +1,74 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: naas-platform
+
+profiles:
+  - name: local
+    activation:
+      - kubeContext: naas-local
+    deploy:
+      helm:
+        releases:
+          # Install order matters: sealed-secrets → cert-manager → ingress-nginx → kyverno → capsule → argocd → authentik
+          - name: sealed-secrets
+            repo: https://bitnami-labs.github.io/sealed-secrets
+            remoteChart: sealed-secrets
+            version: 2.16.2
+            namespace: kube-system
+            setValues:
+              fullnameOverride: sealed-secrets-controller
+
+          - name: cert-manager
+            repo: https://charts.jetstack.io
+            remoteChart: cert-manager
+            version: 1.17.2
+            namespace: cert-manager
+            createNamespace: true
+            setValues:
+              crds.enabled: "true"
+
+          - name: ingress-nginx
+            repo: https://kubernetes.github.io/ingress-nginx
+            remoteChart: ingress-nginx
+            version: 4.12.2
+            namespace: ingress-nginx
+            createNamespace: true
+            valuesFiles:
+              - bootstrap/02-ingress-nginx/values.yaml
+
+          - name: kyverno
+            repo: https://kyverno.github.io/kyverno/
+            remoteChart: kyverno
+            version: 3.3.7
+            namespace: kyverno
+            createNamespace: true
+            valuesFiles:
+              - bootstrap/05-kyverno/values.yaml
+
+          - name: capsule
+            repo: https://projectcapsule.github.io/charts
+            remoteChart: capsule
+            version: 0.7.3
+            namespace: capsule-system
+            createNamespace: true
+            valuesFiles:
+              - bootstrap/04-capsule/values.yaml
+
+          - name: argocd
+            repo: https://argoproj.github.io/argo-helm
+            remoteChart: argo-cd
+            version: 7.8.26
+            namespace: argocd
+            createNamespace: true
+            valuesFiles:
+              - bootstrap/03-argocd/values.yaml
+
+          - name: authentik
+            repo: https://charts.goauthentik.io
+            remoteChart: authentik
+            version: 2025.2.4
+            namespace: authentik
+            createNamespace: true
+            valuesFiles:
+              - bootstrap/06-authentik/values.yaml

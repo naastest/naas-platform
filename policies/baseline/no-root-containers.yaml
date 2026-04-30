@@ -1,0 +1,33 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: no-root-containers
+  annotations:
+    policies.kyverno.io/title: Disallow Root Containers
+    policies.kyverno.io/category: NaaS Baseline
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-runasnonroot
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      validate:
+        message: "Containers must not run as root. Set securityContext.runAsNonRoot=true and runAsUser != 0."
+        pattern:
+          spec:
+            =(initContainers):
+              - =(securityContext):
+                  =(runAsNonRoot): "true"
+                  =(runAsUser): ">0"
+            containers:
+              - securityContext:
+                  runAsNonRoot: "true"
+                  =(runAsUser): ">0"

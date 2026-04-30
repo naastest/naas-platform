@@ -1,0 +1,7 @@
+manager:
+  options:
+    # Groups that get cluster-admin equivalent power over all tenants
+    capsuleUserGroups:
+      - naas-platform-admin
+    # Allow teams to list their own namespaces
+    enableTLSReconciler: true

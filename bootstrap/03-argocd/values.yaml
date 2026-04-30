@@ -1,0 +1,48 @@
+global:
+  domain: argocd.naas.local
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.naas.local
+    annotations:
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    tls: true
+  config:
+    # OIDC for Authentik — clientSecret is set via Sealed Secret after Authentik is up
+    oidc.config: |
+      name: Authentik
+      issuer: https://authentik.naas.local/application/o/argocd/
+      clientID: argocd
+      clientSecret: $oidc.authentik.clientSecret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+        - groups
+      groupsClaim: groups
+  rbacConfig:
+    policy.default: role:readonly
+    policy.csv: |
+      g, naas-platform-admin, role:admin
+    scopes: "[groups, email]"
+
+configs:
+  params:
+    server.insecure: false
+  secret:
+    # Rotate after first login. ArgoCD creates argocd-initial-admin-secret automatically.
+    argocdServerAdminPassword: ""
+
+repoServer:
+  env:
+    - name: ARGOCD_EXEC_TIMEOUT
+      value: "5m"
+
+applicationSet:
+  enabled: true
+
+notifications:
+  enabled: false   # enable when notification targets are configured

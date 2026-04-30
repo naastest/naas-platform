@@ -1,0 +1,49 @@
+# Extra Kyverno policies applied to namespaces with naas.io/compliance=hipaa.
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: hipaa-label-pod-security-restricted
+  annotations:
+    policies.kyverno.io/title: HIPAA - Enforce Pod Security Restricted
+    policies.kyverno.io/category: NaaS Compliance
+spec:
+  rules:
+    - name: label-namespace-restricted
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/compliance: hipaa
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              pod-security.kubernetes.io/enforce: restricted
+              pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: hipaa-require-audit-annotation
+  annotations:
+    policies.kyverno.io/title: HIPAA - Require Audit Annotation
+    policies.kyverno.io/category: NaaS Compliance
+spec:
+  rules:
+    - name: add-audit-annotation
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/compliance: hipaa
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              +(naas.io/audit-enabled): "true"
+              +(naas.io/data-classification): "phi"

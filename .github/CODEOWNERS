@@ -1,0 +1,16 @@
+# Platform team must review and approve all changes to:
+# - namespace definitions (tenant onboarding)
+# - tenant/AppProject definitions
+# - Kyverno policies
+# - RBAC cluster roles
+# - Skaffold/bootstrap config
+
+namespaces/           @platform-team
+tenants/              @platform-team
+policies/             @platform-team
+rbac/                 @platform-team
+bootstrap/            @platform-team
+skaffold.yaml         @platform-team
+platform/             @platform-team
+clusters/             @platform-team
+scripts/              @platform-team

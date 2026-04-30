@@ -1,0 +1,98 @@
+# Generates three RoleBindings per NaaS namespace:
+# - naas-{team}-admin  → ClusterRole: namespace-admin   (full RBAC within namespace)
+# - naas-{team}-dev    → ClusterRole: namespace-developer (deploy + read, no secret access)
+# - naas-{team}-viewer → ClusterRole: namespace-viewer   (read-only)
+#
+# The group names match Authentik groups that are created separately.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-namespace-rbac
+  annotations:
+    policies.kyverno.io/title: Generate Namespace RBAC RoleBindings
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-admin-rolebinding
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: naas-admin
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: namespace-admin
+          subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-admin"
+
+    - name: generate-developer-rolebinding
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: naas-developer
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: namespace-developer
+          subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-dev"
+
+    - name: generate-viewer-rolebinding
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: naas-viewer
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: namespace-viewer
+          subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels['naas.io/team']}}-viewer"

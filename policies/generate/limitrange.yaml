@@ -1,0 +1,178 @@
+# Generates LimitRange per namespace based on naas.io/tier.
+# Defaults are conservative; max values prevent runaway resource usage.
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-limitrange-backend
+  annotations:
+    policies.kyverno.io/title: Generate LimitRange (backend tier)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-limitrange
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/tier: backend
+      generate:
+        apiVersion: v1
+        kind: LimitRange
+        name: naas-limits
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: 100m
+                  memory: 128Mi
+                default:
+                  cpu: 500m
+                  memory: 512Mi
+                max:
+                  cpu: "2"
+                  memory: 4Gi
+              - type: Pod
+                max:
+                  cpu: "4"
+                  memory: 8Gi
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-limitrange-frontend
+  annotations:
+    policies.kyverno.io/title: Generate LimitRange (frontend tier)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-limitrange
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/tier: frontend
+      generate:
+        apiVersion: v1
+        kind: LimitRange
+        name: naas-limits
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: 50m
+                  memory: 64Mi
+                default:
+                  cpu: 100m
+                  memory: 128Mi
+                max:
+                  cpu: 500m
+                  memory: 1Gi
+              - type: Pod
+                max:
+                  cpu: "2"
+                  memory: 2Gi
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-limitrange-data
+  annotations:
+    policies.kyverno.io/title: Generate LimitRange (data tier)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-limitrange
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/tier: data
+      generate:
+        apiVersion: v1
+        kind: LimitRange
+        name: naas-limits
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: 500m
+                  memory: 1Gi
+                default:
+                  cpu: "1"
+                  memory: 2Gi
+                max:
+                  cpu: "8"
+                  memory: 32Gi
+              - type: Pod
+                max:
+                  cpu: "16"
+                  memory: 64Gi
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-limitrange-infra
+  annotations:
+    policies.kyverno.io/title: Generate LimitRange (infra tier)
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: generate-limitrange
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/tier: infra
+      generate:
+        apiVersion: v1
+        kind: LimitRange
+        name: naas-limits
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: 250m
+                  memory: 256Mi
+                default:
+                  cpu: "1"
+                  memory: 1Gi
+                max:
+                  cpu: "8"
+                  memory: 16Gi
+              - type: Pod
+                max:
+                  cpu: "16"
+                  memory: 32Gi

@@ -1,0 +1,36 @@
+# Generates one ArgoCD AppProject per Capsule Tenant (i.e., per team).
+# Each tenant file at tenants/{team}.yaml defines the Tenant CR and its AppProject inline.
+# This ApplicationSet deploys those AppProject resources to the ArgoCD namespace on the hub cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: team-appprojects
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        revision: HEAD
+        files:
+          - path: "tenants/*.yaml"
+  template:
+    metadata:
+      name: "appproject-{{.name}}"
+      labels:
+        naas.io/managed-by: appprojects-applicationset
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        targetRevision: HEAD
+        path: "tenants"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true

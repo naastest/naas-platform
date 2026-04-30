@@ -1,0 +1,16 @@
+# Authentik Blueprint: create initial platform admin group
+# Team-specific groups (naas-{team}-admin/dev/viewer) are created automatically
+# by Kyverno when namespaces are provisioned.
+version: 1
+metadata:
+  name: naas-platform-groups
+entries:
+  - model: authentik_core.group
+    state: present
+    identifiers:
+      name: naas-platform-admin
+    attrs:
+      name: naas-platform-admin
+      is_superuser: false
+      attributes:
+        naas_role: platform-admin

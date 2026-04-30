@@ -1,0 +1,28 @@
+authentik:
+  # Bootstrap credentials (change after first login)
+  # In production: set these via Sealed Secrets, not plaintext
+  secret_key: "change-me-in-production-sealed-secret"
+  bootstrap:
+    email: "admin@naas.local"
+    password: "change-me-on-first-login"
+    token: ""
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - authentik.naas.local
+    tls:
+      - secretName: authentik-tls
+        hosts:
+          - authentik.naas.local
+
+postgresql:
+  enabled: true   # bundled postgres for local dev; use external in production
+  auth:
+    password: "authentik-pg-local"
+    database: authentik
+
+redis:
+  enabled: true   # bundled redis for local dev; use external in production

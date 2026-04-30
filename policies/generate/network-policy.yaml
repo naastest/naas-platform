@@ -1,0 +1,102 @@
+# Generates default NetworkPolicies for every NaaS-managed namespace:
+# 1. default-deny-all: blocks all ingress and egress by default
+# 2. allow-same-namespace: allows pod-to-pod communication within the namespace
+# 3. allow-dns: allows egress to kube-dns (required for service discovery)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-network-policies
+  annotations:
+    policies.kyverno.io/title: Generate Default NetworkPolicies
+    policies.kyverno.io/category: NaaS Generate
+spec:
+  rules:
+    - name: default-deny-all
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny-all
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+              - Egress
+
+    - name: allow-same-namespace
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: allow-same-namespace
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+              - Egress
+            ingress:
+              - from:
+                  - podSelector: {}
+            egress:
+              - to:
+                  - podSelector: {}
+
+    - name: allow-dns-egress
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: allow-dns-egress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Egress
+            egress:
+              - to:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: kube-system
+                ports:
+                  - port: 53
+                    protocol: UDP
+                  - port: 53
+                    protocol: TCP

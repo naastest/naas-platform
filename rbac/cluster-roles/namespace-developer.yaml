@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-developer
+  labels:
+    naas.io/managed-by: naas-platform
+rules:
+  - apiGroups: ["", "apps", "batch", "autoscaling"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets",
+                "cronjobs", "jobs", "pods", "pods/log", "pods/exec",
+                "services", "configmaps", "serviceaccounts",
+                "horizontalpodautoscalers", "poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Read secrets but cannot create/update — prevents exfiltration via new secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  # Read-only cluster resources
+  - apiGroups: ["", "apps"]
+    resources: ["resourcequotas", "limitranges", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
