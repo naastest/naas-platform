@@ -1,58 +1,49 @@
-# Payments team — tier: medium
-# Aggregate tenant quota: 10 namespaces / 100 CPU req / 200 Gi mem req
-#
-# Per-namespace quotas (Kyverno, both apply simultaneously):
-#   dev        →  4 CPU req /  8 Gi mem req
-#   test       →  8 CPU req / 16 Gi mem req
-#   acceptance → 16 CPU req / 32 Gi mem req
-#   production → 32 CPU req / 64 Gi mem req
-#
-# Example: 2×dev + 1×test + 1×acceptance + 1×production
-#   = 2×4 + 8 + 16 + 32 = 68 CPU requests — within the 100 CPU tenant ceiling.
+# Platform team — tier: large
+# Aggregate tenant quota: 20 namespaces / 200 CPU req / 400 Gi mem req
 ---
 apiVersion: capsule.clastix.io/v1beta2
 kind: Tenant
 metadata:
-  name: payments
+  name: platform
   labels:
-    naas.io/team: payments
-    naas.io/tenant-tier: medium
+    naas.io/team: platform
+    naas.io/tenant-tier: large
 spec:
   owners:
     - kind: Group
-      name: naas-payments-admin
+      name: naas-platform-admin
 
   namespaceSelectorLabels:
-    naas.io/team: payments
+    naas.io/team: platform
 
-  # ── Tenant aggregate quota (medium tier) ─────────────────────────────────
+  # ── Tenant aggregate quota (large tier) ──────────────────────────────────
   resourceQuotas:
     scope: Tenant
     items:
       - hard:
-          count/namespaces: "10"
-          requests.cpu: "100"
-          limits.cpu: "200"
-          requests.memory: 200Gi
-          limits.memory: 400Gi
-          persistentvolumeclaims: "50"
+          count/namespaces: "20"
+          requests.cpu: "200"
+          limits.cpu: "400"
+          requests.memory: 400Gi
+          limits.memory: 800Gi
+          persistentvolumeclaims: "100"
 
   additionalRoleBindings:
     - clusterRoleName: admin
       subjects:
         - kind: Group
           apiGroup: rbac.authorization.k8s.io
-          name: naas-payments-admin
+          name: naas-platform-admin
     - clusterRoleName: edit
       subjects:
         - kind: Group
           apiGroup: rbac.authorization.k8s.io
-          name: naas-payments-dev
+          name: naas-platform-dev
     - clusterRoleName: view
       subjects:
         - kind: Group
           apiGroup: rbac.authorization.k8s.io
-          name: naas-payments-viewer
+          name: naas-platform-viewer
 
   networkPolicies:
     items:
@@ -62,12 +53,12 @@ spec:
           - from:
               - namespaceSelector:
                   matchLabels:
-                    naas.io/team: payments
+                    naas.io/team: platform
         egress:
           - to:
               - namespaceSelector:
                   matchLabels:
-                    naas.io/team: payments
+                    naas.io/team: platform
           - to:
               - namespaceSelector:
                   matchLabels:
@@ -81,28 +72,29 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: payments
+  name: platform
   namespace: argocd
   labels:
-    naas.io/team: payments
+    naas.io/team: platform
     naas.io/managed-by: naas-platform
 spec:
-  description: "NaaS AppProject for team payments (tier: medium)"
+  description: "NaaS AppProject for the platform team (tier: large)"
 
   sourceRepos:
-    - "https://github.com/naastest/team-payments"
+    - "https://github.com/naastest/team-platform"
+    - "https://github.com/naastest/naas-platform"
     - "https://charts.bitnami.com/bitnami"
     - "https://charts.helm.sh/stable"
 
   destinations:
     - name: dev
-      namespace: "payments-*"
+      namespace: "platform-*"
     - name: test
-      namespace: "payments-*"
+      namespace: "platform-*"
     - name: acceptance
-      namespace: "payments-*"
+      namespace: "platform-*"
     - name: production
-      namespace: "payments-*"
+      namespace: "platform-*"
 
   clusterResourceWhitelist: []
 
@@ -143,28 +135,13 @@ spec:
   roles:
     - name: admin
       policies:
-        - "p, proj:payments:admin, applications, *, payments/*, allow"
+        - "p, proj:platform:admin, applications, *, platform/*, allow"
       groups:
-        - "naas-payments-admin"
+        - "naas-platform-admin"
     - name: developer
       policies:
-        - "p, proj:payments:developer, applications, get, payments/*, allow"
-        - "p, proj:payments:developer, applications, sync, payments/*, allow"
-        - "p, proj:payments:developer, applications, override, payments/*, allow"
+        - "p, proj:platform:developer, applications, get, platform/*, allow"
+        - "p, proj:platform:developer, applications, sync, platform/*, allow"
+        - "p, proj:platform:developer, applications, override, platform/*, allow"
       groups:
-        - "naas-payments-dev"
-    - name: viewer
-      policies:
-        - "p, proj:payments:viewer, applications, get, payments/*, allow"
-      groups:
-        - "naas-payments-viewer"
-
-  syncWindows:
-    - kind: allow
-      schedule: "0 6 * * 1-5"
-      duration: 16h
-      applications:
-        - "*-production"
-      clusters:
-        - production
-      manualSync: true
+        - "naas-platform-dev"

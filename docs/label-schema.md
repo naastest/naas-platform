@@ -25,7 +25,24 @@ All namespaces managed by this platform must carry the following labels. They ar
   - `naas-{team}-viewer` → `ClusterRole/namespace-viewer`
 - ArgoCD `AppProject/{team}` scoping deployments to `{team}-*` namespaces
 
-### `naas.io/env` → DTAP cluster + quota tier
+## Tenant Aggregate Quotas
+
+Capsule enforces a **combined ceiling across all namespaces a team owns**. Both the per-namespace quota (from `naas.io/env`, set by Kyverno) and the tenant aggregate quota (from the Tenant CR) apply simultaneously — the more restrictive one wins at any point.
+
+The platform team assigns a tier when onboarding a team. See `tenants/tiers.yaml` for details.
+
+| Tier | Max namespaces | CPU req total | Memory req total | PVCs total |
+|------|---------------|---------------|-----------------|-----------|
+| `small` | 5 | 50 | 100 Gi | 20 |
+| `medium` | 10 | 100 | 200 Gi | 50 |
+| `large` | 20 | 200 | 400 Gi | 100 |
+| `xlarge` | 40 | 400 | 800 Gi | 200 |
+
+Example (payments team, medium tier, 2×dev + 1×test + 1×acceptance + 1×production):
+- Per-namespace usage: 2×4 + 8 + 16 + 32 = **68 CPU** → within 100 CPU ceiling ✓
+- If they try to add a 5th production namespace: 68 + 32 = 100 CPU → hits ceiling, blocked ✓
+
+### `naas.io/env` → DTAP cluster + per-namespace quota
 
 | env | Cluster | CPU req/limit | Memory req/limit | Pods |
 |-----|---------|---------------|-----------------|------|
