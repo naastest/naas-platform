@@ -10,7 +10,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         revision: HEAD
         files:
           - path: "tenants/*.yaml"
@@ -22,7 +22,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "tenants"
       destination:

@@ -11,7 +11,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+    repoURL: https://github.com/naastest/naas-platform.git
     targetRevision: HEAD
     path: platform/applicationsets
   destination:

@@ -91,7 +91,7 @@ spec:
 
   # Teams deploy from their own repos only
   sourceRepos:
-    - "https://github.com/ORG/team-payments-*"  # TODO: update org
+    - "https://github.com/naastest/team-payments-*"  # TODO: update org
     - "https://charts.bitnami.com/bitnami"
     - "https://charts.helm.sh/stable"
 

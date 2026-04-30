@@ -14,7 +14,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         revision: HEAD
         directories:
           - path: "namespaces/dev/*"
@@ -29,7 +29,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
@@ -52,7 +52,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         revision: HEAD
         directories:
           - path: "namespaces/test/*"
@@ -65,7 +65,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
@@ -88,7 +88,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         revision: HEAD
         directories:
           - path: "namespaces/acceptance/*"
@@ -101,7 +101,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
@@ -124,7 +124,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         revision: HEAD
         directories:
           - path: "namespaces/production/*"
@@ -137,7 +137,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/ORG/naas-platform.git  # TODO: update to your repo URL
+        repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
