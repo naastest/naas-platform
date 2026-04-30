@@ -18,6 +18,10 @@ REQUIRED_LABELS = {
     "naas.io/app": r"^[a-z][a-z0-9-]{1,60}$",
     "naas.io/cost-center": r"^.+$",
     "naas.io/compliance": r"^(standard|pci|hipaa)$",
+}
+
+# Annotations (not labels — Kubernetes label values disallow '@')
+REQUIRED_ANNOTATIONS = {
     "naas.io/owner-email": r"^[^@]+@[^@]+\.[^@]+$",
 }
 
@@ -50,6 +54,7 @@ def validate_file(path: str) -> list[str]:
         errors.append(f"  name '{name}' does not match pattern {{team}}-{{tier}}-{{env}}")
 
     labels = doc.get("metadata", {}).get("labels", {}) or {}
+    annotations = doc.get("metadata", {}).get("annotations", {}) or {}
 
     for label, pattern in REQUIRED_LABELS.items():
         value = labels.get(label)
@@ -57,6 +62,13 @@ def validate_file(path: str) -> list[str]:
             errors.append(f"  missing required label: {label}")
         elif not re.match(pattern, str(value)):
             errors.append(f"  label {label}='{value}' does not match allowed values: {pattern}")
+
+    for annotation, pattern in REQUIRED_ANNOTATIONS.items():
+        value = annotations.get(annotation)
+        if value is None:
+            errors.append(f"  missing required annotation: {annotation}")
+        elif not re.match(pattern, str(value)):
+            errors.append(f"  annotation {annotation}='{value}' is not a valid email")
 
     # Check that namespace name env suffix matches naas.io/env label
     env_label = labels.get("naas.io/env", "")

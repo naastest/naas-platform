@@ -43,11 +43,11 @@ metadata:
     # Determines: extra Kyverno policies applied to this namespace
     naas.io/compliance: "COMPLIANCE_PLACEHOLDER"
 
-    # ── Owner email ────────────────────────────────────────────────────────
+  annotations:
     # REQUIRED: team distribution list email for alerts and escalation
+    # (Email addresses cannot be label values — Kubernetes disallows '@')
     naas.io/owner-email: "owner-email@example.com"
 
-  annotations:
     # GitHub username of the person requesting this namespace
     naas.io/requested-by: ""
     # Jira/Linear ticket tracking this request

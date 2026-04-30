@@ -1,6 +1,6 @@
 controller:
   service:
-    type: NodePort
+    type: LoadBalancer
   ingressClassResource:
     name: nginx
     default: true

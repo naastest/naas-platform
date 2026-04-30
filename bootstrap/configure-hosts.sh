@@ -1,31 +1,29 @@
 #!/usr/bin/env bash
-# Configures *.naas.local DNS resolution on macOS via minikube ingress-dns.
-# Uses /etc/resolver/naas.local instead of /etc/hosts to avoid mDNS conflicts.
+# Adds *.naas.local hostnames to /etc/hosts pointing to 127.0.0.1.
+# Works with `minikube tunnel` which assigns 127.0.0.1 to the ingress LoadBalancer.
 set -euo pipefail
 
-PROFILE="${MINIKUBE_PROFILE:-naas-local}"
 DOMAIN="naas.local"
+HOSTS=(
+  "argocd.$DOMAIN"
+  "authentik.$DOMAIN"
+)
 
-MINIKUBE_IP=$(minikube ip --profile "$PROFILE" 2>/dev/null)
-if [ -z "$MINIKUBE_IP" ]; then
-  echo "ERROR: Could not get minikube IP. Is minikube running?"
-  exit 1
-fi
+MARKER="# naas-local"
 
-echo "==> Configuring DNS resolver for .$DOMAIN -> $MINIKUBE_IP"
+echo "==> Adding $DOMAIN hostnames to /etc/hosts (requires sudo)"
 
-sudo mkdir -p /etc/resolver
-cat <<EOF | sudo tee /etc/resolver/"$DOMAIN" > /dev/null
-domain $DOMAIN
-nameserver $MINIKUBE_IP
-search_order 1
-timeout 5
-EOF
+for host in "${HOSTS[@]}"; do
+  if grep -qF "$host" /etc/hosts; then
+    echo "    already present: $host"
+  else
+    echo "127.0.0.1 $host $MARKER" | sudo tee -a /etc/hosts > /dev/null
+    echo "    added: $host"
+  fi
+done
 
-echo "==> DNS resolver written to /etc/resolver/$DOMAIN"
 echo ""
-echo "Hostnames now accessible:"
-echo "  https://argocd.$DOMAIN"
-echo "  https://authentik.$DOMAIN"
-echo ""
-echo "NOTE: If DNS doesn't resolve immediately, try: sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
+echo "Hostnames configured (requires 'minikube tunnel --profile naas-local' to be running):"
+for host in "${HOSTS[@]}"; do
+  echo "  http://$host"
+done

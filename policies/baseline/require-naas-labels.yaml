@@ -55,4 +55,5 @@ spec:
               naas.io/app: "?*"
               naas.io/cost-center: "?*"
               naas.io/compliance: "standard | pci | hipaa"
+            annotations:
               naas.io/owner-email: "?*"

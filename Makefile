@@ -1,7 +1,7 @@
 PROFILE ?= naas-local
 SKAFFOLD_PROFILE ?= local
 
-.PHONY: up down reset hosts bootstrap status logs ns-add help
+.PHONY: up down reset hosts bootstrap proxy proxy-stop status logs ns-add help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

@@ -12,7 +12,7 @@ All namespaces managed by this platform must carry the following labels. They ar
 | `naas.io/app` | `[a-z][a-z0-9-]{1,60}` | Application/service name |
 | `naas.io/cost-center` | any string | Finance billing code (propagated to all generated resources) |
 | `naas.io/compliance` | `standard \| pci \| hipaa` | Extra Kyverno policies applied |
-| `naas.io/owner-email` | valid email | Alert routing and escalation contact |
+| `naas.io/owner-email` (**annotation**) | valid email | Alert routing and escalation contact |
 
 ## What Each Label Generates
 
