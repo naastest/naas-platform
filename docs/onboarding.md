@@ -4,17 +4,22 @@ This document explains how a team requests a new namespace in the NaaS platform.
 
 ## Prerequisites
 
-Before requesting a namespace, your team needs a **Tenant**. If one doesn't exist yet, contact the platform team (or open a PR adding `tenants/{team}.yaml` — use `tenants/_template.yaml` as a starting point).
+Before requesting a namespace, your team needs:
+1. A **Tenant** in the platform repo (`naastest/naas-platform`). Contact the platform team to add `tenants/{team}.yaml` — they use `tenants/_template.yaml` as the starting point. This is a one-time step.
+2. A **team repo** (`naastest/team-{yourteam}`). Ask the platform team to create it — this is also one-time and takes ~5 minutes.
 
-## Step 1: Copy the Template
+## Step 1: Work in Your Team Repo
+
+Each team has their own repo in the `naastest` org: `naastest/team-{yourteam}`.
+Namespace definitions live in that repo, not in `naas-platform`. This means you can
+PR, review, and merge dev/test changes without involving the platform team.
 
 ```bash
-# Using make (fills in values automatically):
-make ns-add TEAM=myteam TIER=backend ENV=dev APP=my-service COMPLIANCE=standard COST_CENTER=eng-123
-
-# Or manually:
-cp -r namespaces/_template namespaces/dev/myteam-backend
-# Edit namespaces/dev/myteam-backend/namespace.yaml
+git clone git@github.com:naastest/team-myteam.git
+cd team-myteam
+mkdir -p namespaces/dev
+cp /path/to/naas-platform/namespaces/_template/namespace.yaml namespaces/dev/namespace.yaml
+# Edit the file
 ```
 
 ## Step 2: Fill in the Labels

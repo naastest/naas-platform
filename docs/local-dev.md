@@ -89,6 +89,18 @@ make ns-add TEAM=myteam TIER=backend ENV=dev APP=my-app COMPLIANCE=standard COST
 # Review the generated file, then commit and push
 ```
 
+## SCM Provider Token (Required for ApplicationSets)
+
+The namespace ApplicationSets use GitHub's SCM provider to auto-discover `naastest/team-*` repos. ArgoCD needs a GitHub PAT with `repo` (read) + `read:org` scope stored as:
+
+```bash
+kubectl create secret generic argocd-scm-token \
+  --from-literal=token=ghp_YOUR_TOKEN \
+  -n argocd
+```
+
+For local Minikube, create the secret after `make bootstrap`. In production, seal it with `kubeseal` and commit the SealedSecret.
+
 ## Simulating DTAP Locally
 
 For full DTAP simulation on a single minikube, register it as all 4 cluster targets in ArgoCD:
