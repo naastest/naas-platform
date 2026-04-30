@@ -1,0 +1,178 @@
+# Deploys team workloads from each team repo's apps/{env}/ directory.
+# Each team-* repo owns its own app manifests; this ApplicationSet fans them
+# out to the correct DTAP cluster. Teams use their AppProject to restrict
+# which namespaces and resources they can touch.
+#
+# Directory layout expected in each team repo:
+#   apps/dev/          → deployed to dev cluster
+#   apps/test/         → deployed to test cluster
+#   apps/acceptance/   → deployed to acceptance cluster
+#   apps/production/   → deployed to production cluster
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-dev
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - scmProvider:
+        github:
+          organization: naastest
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        filters:
+          - repositoryMatch: "^team-"
+            branchMatch: "^main$"
+        cloneProtocol: https
+  template:
+    metadata:
+      name: "apps-{{.repository}}-dev"
+      labels:
+        naas.io/managed-by: apps-applicationset
+        naas.io/env: dev
+    spec:
+      project: default
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: apps/dev
+        directory:
+          recurse: false
+      destination:
+        name: dev
+        namespace: argocd   # default; resources carry their own namespace
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-test
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - scmProvider:
+        github:
+          organization: naastest
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        filters:
+          - repositoryMatch: "^team-"
+            branchMatch: "^main$"
+        cloneProtocol: https
+  template:
+    metadata:
+      name: "apps-{{.repository}}-test"
+      labels:
+        naas.io/managed-by: apps-applicationset
+        naas.io/env: test
+    spec:
+      project: default
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: apps/test
+        directory:
+          recurse: false
+      destination:
+        name: test
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-acceptance
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - scmProvider:
+        github:
+          organization: naastest
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        filters:
+          - repositoryMatch: "^team-"
+            branchMatch: "^main$"
+        cloneProtocol: https
+  template:
+    metadata:
+      name: "apps-{{.repository}}-acceptance"
+      labels:
+        naas.io/managed-by: apps-applicationset
+        naas.io/env: acceptance
+    spec:
+      project: default
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: apps/acceptance
+        directory:
+          recurse: false
+      destination:
+        name: acceptance
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-production
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - scmProvider:
+        github:
+          organization: naastest
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        filters:
+          - repositoryMatch: "^team-"
+            branchMatch: "^main$"
+        cloneProtocol: https
+  template:
+    metadata:
+      name: "apps-{{.repository}}-production"
+      labels:
+        naas.io/managed-by: apps-applicationset
+        naas.io/env: production
+    spec:
+      project: default
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: apps/production
+        directory:
+          recurse: false
+      destination:
+        name: production
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
