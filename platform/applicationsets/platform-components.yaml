@@ -1,5 +1,5 @@
 # Manages platform components that ArgoCD controls after bootstrap:
-# Kyverno policies, ArgoCD config, cluster registrations.
+# Kyverno policies, ArgoCD config, RBAC, Authentik blueprints, Capsule tenants.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -18,6 +18,8 @@ spec:
             path: rbac
           - component: authentik-config
             path: authentik
+          - component: tenants
+            path: tenants
   template:
     metadata:
       name: "platform-{{.component}}"
@@ -30,7 +32,7 @@ spec:
         targetRevision: HEAD
         path: "{{.path}}"
       destination:
-        server: https://kubernetes.default.svc
+        name: dev         # use cluster name, not server URL — avoids ambiguity when multiple clusters share kubernetes.default.svc
         namespace: argocd
       syncPolicy:
         automated:
