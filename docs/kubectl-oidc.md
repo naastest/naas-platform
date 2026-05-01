@@ -42,7 +42,7 @@ users:
       args:
         - oidc-login
         - get-token
-        - --oidc-issuer-url=http://authentik.naas.local/application/o/kubernetes/
+        - --oidc-issuer-url=https://authentik.naas.local/
         - --oidc-client-id=kubernetes
         - --oidc-extra-scope=groups
         - --listen-address=localhost:8000
