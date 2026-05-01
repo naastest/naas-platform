@@ -49,7 +49,6 @@ spec:
         path: apps/dev
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: dev
         namespace: "payments-preview-pr-{{.number}}"
@@ -101,7 +100,6 @@ spec:
         path: apps/dev
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: dev
         namespace: "frontend-preview-pr-{{.number}}"

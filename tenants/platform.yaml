@@ -12,6 +12,7 @@ spec:
   owners:
     - kind: Group
       name: naas-platform-admin
+      clusterRoles: ["admin", "capsule-namespace-deleter"]
 
   # ── Tenant aggregate quota (large tier) ──────────────────────────────────
   resourceQuotas:
