@@ -40,6 +40,11 @@ spec:
               selector:
                 matchLabels:
                   naas.io/platform-system: "true"
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  naas.io/preview: "true"
       validate:
         message: >
           Namespace is missing required naas.io/* labels.

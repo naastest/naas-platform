@@ -1,0 +1,123 @@
+# PR Preview environments — one per open pull request on each team-* repo.
+#
+# When a developer opens a PR on their team repo, ArgoCD creates a temporary
+# Application that deploys the PR branch's apps/dev/ manifests into an
+# isolated namespace: {team}-preview-pr-{number}.
+#
+# When the PR is closed or merged, ArgoCD prunes the Application and its
+# resources automatically (no GitHub Actions token required).
+#
+# Flow:
+#   1. Dev opens PR on team-payments (e.g. PR #42)
+#   2. ArgoCD detects it via the pullRequest generator (polls every 2 min)
+#   3. Creates Application "preview-team-payments-pr-42"
+#   4. Deploys apps/dev/ from the PR branch to namespace payments-preview-pr-42
+#   5. Dev tests at whatever URL their app exposes in that namespace
+#   6. PR merged → Application deleted → namespace pruned
+#
+# To add a new team: copy this block and change `repo` and the team label.
+# One ApplicationSet per team repo is required (pullRequest generator is per-repo).
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: pr-preview-team-payments
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - pullRequest:
+        github:
+          owner: naastest
+          repo: team-payments
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        requeueAfterSeconds: 120
+  template:
+    metadata:
+      name: "preview-team-payments-pr-{{.number}}"
+      labels:
+        naas.io/managed-by: pr-preview
+        naas.io/team: payments
+        naas.io/env: dev
+    spec:
+      project: payments
+      source:
+        repoURL: "https://github.com/naastest/team-payments"
+        targetRevision: "{{.head_sha}}"
+        path: apps/dev
+        directory:
+          recurse: false
+          allowEmpty: true
+      destination:
+        name: dev
+        namespace: "payments-preview-pr-{{.number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        managedNamespaceMetadata:
+          labels:
+            naas.io/team: payments
+            naas.io/env: dev
+            naas.io/tier: backend
+            naas.io/app: "pr-{{.number}}"
+            naas.io/cost-center: payments-preview
+            naas.io/compliance: standard
+            naas.io/preview: "true"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: pr-preview-team-frontend
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - pullRequest:
+        github:
+          owner: naastest
+          repo: team-frontend
+          tokenRef:
+            secretName: argocd-scm-token
+            key: token
+        requeueAfterSeconds: 120
+  template:
+    metadata:
+      name: "preview-team-frontend-pr-{{.number}}"
+      labels:
+        naas.io/managed-by: pr-preview
+        naas.io/team: frontend
+        naas.io/env: dev
+    spec:
+      project: frontend
+      source:
+        repoURL: "https://github.com/naastest/team-frontend"
+        targetRevision: "{{.head_sha}}"
+        path: apps/dev
+        directory:
+          recurse: false
+          allowEmpty: true
+      destination:
+        name: dev
+        namespace: "frontend-preview-pr-{{.number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        managedNamespaceMetadata:
+          labels:
+            naas.io/team: frontend
+            naas.io/env: dev
+            naas.io/tier: frontend
+            naas.io/app: "pr-{{.number}}"
+            naas.io/cost-center: fe-preview
+            naas.io/compliance: standard
+            naas.io/preview: "true"
