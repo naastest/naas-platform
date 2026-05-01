@@ -20,9 +20,9 @@ data:
       - model: authentik_providers_oauth2.oauth2provider
         state: present
         identifiers:
-          name: Kubernetes NaaS
+          name: Kubernetes
         attrs:
-          name: Kubernetes NaaS
+          name: Kubernetes
           client_id: kubernetes
           client_type: public
           redirect_uris:
@@ -42,7 +42,7 @@ data:
         attrs:
           name: Kubernetes
           slug: kubernetes
-          provider: !Find [authentik_providers_oauth2.oauth2provider, [name, Kubernetes NaaS]]
+          provider: !Find [authentik_providers_oauth2.oauth2provider, [name, Kubernetes]]
 
   argocd-provider.yaml: |
     version: 1
