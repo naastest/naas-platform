@@ -107,6 +107,8 @@ spec:
     - group: "batch"
       kind: "*"
     - group: ""
+      kind: "Pod"
+    - group: ""
       kind: "Service"
     - group: ""
       kind: "ConfigMap"
