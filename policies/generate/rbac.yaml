@@ -76,6 +76,45 @@ spec:
               kind: Group
               name: "naas-{{request.object.metadata.name}}-dev"
 
+    # Generates one ClusterRoleBinding per team (idempotent — same name across
+    # all namespaces of the team, Kyverno syncs to the same object).
+    # Gives all three team role groups the ability to list/get namespaces so
+    # users can discover what exists. They can still only access resources in
+    # namespaces where they have a RoleBinding.
+    # For filtered namespace listing (team-only), deploy capsule-proxy.
+    - name: generate-team-namespace-lister
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchExpressions:
+                  - key: naas.io/team
+                    operator: Exists
+      generate:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-namespace-lister"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              naas.io/managed-by: kyverno
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: naas-namespace-lister
+          subjects:
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-admin"
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-dev"
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-viewer"
+
     - name: generate-viewer-rolebinding
       match:
         any:
