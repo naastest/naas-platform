@@ -45,6 +45,10 @@ spec:
               selector:
                 matchLabels:
                   naas.io/preview: "true"
+          - resources:
+              kinds: [Namespace]
+              names:
+                - "*-preview-pr-*"
       validate:
         message: >
           Namespace is missing required naas.io/* labels.
