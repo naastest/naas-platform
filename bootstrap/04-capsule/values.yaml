@@ -1,7 +1,11 @@
 manager:
   options:
-    # Groups that get cluster-admin equivalent power over all tenants
+    # Groups recognized as Capsule users — capsule-proxy filters namespace lists for these groups.
+    # Add all three role groups for every tenant team here.
+    # (New team onboarding: append naas-{team}-admin, naas-{team}-dev, naas-{team}-viewer)
     capsuleUserGroups:
       - naas-platform-admin
-    # Allow teams to list their own namespaces
+      - naas-payments-admin
+      - naas-payments-dev
+      - naas-payments-viewer
     enableTLSReconciler: true

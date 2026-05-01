@@ -1,0 +1,9 @@
+rbac:
+  serviceProxier:
+    # Restrict the service-proxier RoleBinding from the default system:authenticated
+    # (which would expose kube-system to all users via capsule-proxy's roleBindingReflector)
+    # to only platform admins who actually manage SealedSecrets.
+    subjects: |
+      - apiGroup: rbac.authorization.k8s.io
+        kind: Group
+        name: naas-platform-admin

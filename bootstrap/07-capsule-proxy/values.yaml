@@ -5,6 +5,12 @@ options:
   authPreferredTypes: "BearerToken"
   # TLS is handled by ingress-nginx; capsule-proxy listens plain HTTP internally
   enableSSL: false
+  # Index namespaces by RoleBinding membership instead of Capsule Tenant status.
+  # Required because namespaces are created by ArgoCD (not through Capsule's admission
+  # webhook), so Capsule's status.namespaces stays at 0. The RoleBinding reflector
+  # indexes each namespace where Kyverno has generated a naas-{admin,developer,viewer}
+  # RoleBinding for the team group — and returns only those namespaces for the user.
+  roleBindingReflector: true
 
 # capsule-proxy needs to reach the real kube-apiserver
 # In minikube this is the in-cluster service
