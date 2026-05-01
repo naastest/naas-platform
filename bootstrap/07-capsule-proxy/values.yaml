@@ -45,6 +45,7 @@ gangplank:
       - profile
       - email
       - groups
+      - offline_access
 
     # Map the preferred_username claim — matches kube-apiserver oidc-username-claim
     usernameClaim: "preferred_username"
