@@ -12,6 +12,73 @@ options:
   # RoleBinding for the team group — and returns only those namespaces for the user.
   roleBindingReflector: true
 
+gangplank:
+  enabled: true
+
+  # No secret reference for session key — set via envs for local dev.
+  # Production: use a SealedSecret and reference it here.
+  sensitiveEnvs: {}
+
+  envs:
+    GANGPLANK_CONFIG_SESSION_SECURITY_KEY: "naas-local-gangplank-session-key-32c"
+
+  config:
+    clusterName: "naas-local"
+
+    # User's browser is redirected here to authenticate
+    authorizeURL: "https://authentik.naas.local/application/o/gangplank/authorize/"
+    # Gangplank server calls this directly (same URL — CA cert is mounted)
+    tokenURL: "https://authentik.naas.local/application/o/gangplank/token/"
+
+    redirectURL: "https://gangplank.naas.local/callback"
+
+    clientID: "gangplank"
+    clientSecret: "gangplank-naas-local-2026"
+
+    # Request groups so they appear in the generated kubeconfig exec credential
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
+
+    # Map the preferred_username claim — matches kube-apiserver oidc-username-claim
+    usernameClaim: "preferred_username"
+
+    # Generated kubeconfig points to capsule-proxy so namespace filtering applies
+    apiServerURL: "https://capsule-proxy.naas.local"
+
+    # capsule-proxy is behind the naas-local cert-manager CA
+    clusterCAPath: "/cacerts/ca.crt"
+
+    # Trust naas-local CA for token URL HTTPS calls to Authentik
+    trustedCAPath: "/cacerts/ca.crt"
+
+  # Mount the naas-local CA cert so Gangplank can validate Authentik's TLS
+  volumes:
+    - name: cacerts
+      configMap:
+        name: naas-local-ca
+  volumeMounts:
+    - name: cacerts
+      mountPath: /cacerts
+      readOnly: true
+
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: naas-ca
+    hosts:
+      - host: gangplank.naas.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: gangplank-naas-local-tls
+        hosts:
+          - gangplank.naas.local
+
 # capsule-proxy needs to reach the real kube-apiserver
 # In minikube this is the in-cluster service
 replicaCount: 1

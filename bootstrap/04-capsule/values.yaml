@@ -8,4 +8,7 @@ manager:
       - naas-payments-admin
       - naas-payments-dev
       - naas-payments-viewer
+      - naas-frontend-admin
+      - naas-frontend-dev
+      - naas-frontend-viewer
     enableTLSReconciler: true

@@ -7,6 +7,8 @@ DOMAIN="naas.local"
 HOSTS=(
   "argocd.$DOMAIN"
   "authentik.$DOMAIN"
+  "capsule-proxy.$DOMAIN"
+  "gangplank.$DOMAIN"
 )
 
 MARKER="# naas-local"

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend-ui-dev
+  labels:
+    naas.io/team: frontend
+    naas.io/env: dev
+    naas.io/tier: frontend
+    naas.io/app: web-ui
+    naas.io/cost-center: fe-001
+    naas.io/compliance: standard
+  annotations:
+    naas.io/owner-email: frontend-team@naas.local
+    naas.io/description: Frontend team web UI — dev environment

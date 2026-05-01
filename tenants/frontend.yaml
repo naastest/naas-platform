@@ -1,0 +1,165 @@
+# Frontend team — tier: small
+# Aggregate tenant quota: 5 namespaces / 50 CPU req / 100 Gi mem req
+#
+# Per-namespace quotas (Kyverno, both apply simultaneously):
+#   dev        →  4 CPU req /  8 Gi mem req
+#   production → 32 CPU req / 64 Gi mem req
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: frontend
+  labels:
+    naas.io/team: frontend
+    naas.io/tenant-tier: small
+spec:
+  owners:
+    - kind: Group
+      name: naas-frontend-admin
+      clusterRoles: ["admin", "capsule-namespace-deleter"]
+    - kind: Group
+      name: naas-frontend-dev
+      clusterRoles: ["edit"]
+    - kind: Group
+      name: naas-frontend-viewer
+      clusterRoles: ["view"]
+
+  # ── Tenant aggregate quota (small tier) ──────────────────────────────────
+  resourceQuotas:
+    scope: Tenant
+    items:
+      - hard:
+          count/namespaces: "5"
+          requests.cpu: "50"
+          limits.cpu: "100"
+          requests.memory: 100Gi
+          limits.memory: 200Gi
+          persistentvolumeclaims: "20"
+
+  additionalRoleBindings:
+    - clusterRoleName: admin
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-frontend-admin
+    - clusterRoleName: edit
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-frontend-dev
+    - clusterRoleName: view
+      subjects:
+        - kind: Group
+          apiGroup: rbac.authorization.k8s.io
+          name: naas-frontend-viewer
+
+  networkPolicies:
+    items:
+      - podSelector: {}
+        policyTypes: [Ingress, Egress]
+        ingress:
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    naas.io/team: frontend
+        egress:
+          - to:
+              - namespaceSelector:
+                  matchLabels:
+                    naas.io/team: frontend
+          - to:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: kube-system
+            ports:
+              - port: 53
+                protocol: UDP
+              - port: 53
+                protocol: TCP
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: frontend
+  namespace: argocd
+  labels:
+    naas.io/team: frontend
+    naas.io/managed-by: naas-platform
+spec:
+  description: "NaaS AppProject for team frontend (tier: small)"
+
+  sourceRepos:
+    - "https://github.com/naastest/team-frontend"
+    - "https://charts.bitnami.com/bitnami"
+    - "https://charts.helm.sh/stable"
+
+  destinations:
+    - name: dev
+      namespace: "frontend-*"
+    - name: production
+      namespace: "frontend-*"
+
+  clusterResourceWhitelist: []
+
+  namespaceResourceWhitelist:
+    - group: "apps"
+      kind: "*"
+    - group: "batch"
+      kind: "*"
+    - group: ""
+      kind: "Service"
+    - group: ""
+      kind: "ConfigMap"
+    - group: ""
+      kind: "Secret"
+    - group: ""
+      kind: "ServiceAccount"
+    - group: "networking.k8s.io"
+      kind: "Ingress"
+    - group: "autoscaling"
+      kind: "*"
+    - group: "policy"
+      kind: "PodDisruptionBudget"
+
+  namespaceResourceBlacklist:
+    - group: "rbac.authorization.k8s.io"
+      kind: "*"
+    - group: "networking.k8s.io"
+      kind: "NetworkPolicy"
+    - group: ""
+      kind: "ResourceQuota"
+    - group: ""
+      kind: "LimitRange"
+    - group: "kyverno.io"
+      kind: "*"
+    - group: "capsule.clastix.io"
+      kind: "*"
+
+  roles:
+    - name: admin
+      policies:
+        - "p, proj:frontend:admin, applications, *, frontend/*, allow"
+      groups:
+        - "naas-frontend-admin"
+    - name: developer
+      policies:
+        - "p, proj:frontend:developer, applications, get, frontend/*, allow"
+        - "p, proj:frontend:developer, applications, sync, frontend/*, allow"
+        - "p, proj:frontend:developer, applications, override, frontend/*, allow"
+      groups:
+        - "naas-frontend-dev"
+    - name: viewer
+      policies:
+        - "p, proj:frontend:viewer, applications, get, frontend/*, allow"
+      groups:
+        - "naas-frontend-viewer"
+
+  syncWindows:
+    - kind: allow
+      schedule: "0 6 * * 1-5"
+      duration: 16h
+      applications:
+        - "*-production"
+      clusters:
+        - production
+      manualSync: true
