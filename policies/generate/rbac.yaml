@@ -1,9 +1,10 @@
-# Generates three RoleBindings per NaaS namespace:
-# - naas-{team}-admin  → ClusterRole: namespace-admin   (full RBAC within namespace)
-# - naas-{team}-dev    → ClusterRole: namespace-developer (deploy + read, no secret access)
-# - naas-{team}-viewer → ClusterRole: namespace-viewer   (read-only)
+# Generates three RoleBindings per NaaS namespace.
+# Each binding has TWO group subjects:
+#   - naas-{team}-{role}      : blanket access to ALL namespaces of that team
+#   - naas-{namespace}-{role} : access to THIS namespace only (fine-grained)
 #
-# The group names match Authentik groups that are created separately.
+# This lets platform admins give team-wide access via naas-{team}-*,
+# and tenant admins give targeted access via naas-{namespace}-* groups.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -40,9 +41,11 @@ spec:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
               name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-admin"
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.name}}-admin"
 
     - name: generate-developer-rolebinding
-
       match:
         any:
           - resources:
@@ -69,6 +72,9 @@ spec:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
               name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-dev"
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.name}}-dev"
 
     - name: generate-viewer-rolebinding
       match:
@@ -97,3 +103,6 @@ spec:
             - apiGroup: rbac.authorization.k8s.io
               kind: Group
               name: "naas-{{request.object.metadata.labels.\"naas.io/team\"}}-viewer"
+            - apiGroup: rbac.authorization.k8s.io
+              kind: Group
+              name: "naas-{{request.object.metadata.name}}-viewer"

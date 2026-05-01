@@ -1,0 +1,48 @@
+version: 1
+metadata:
+  name: naas-namespace-groups-payments-backend-dev
+entries:
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-dev-admin
+  attrs:
+    name: naas-payments-backend-dev-admin
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-dev
+      naas_team: payments
+      naas_role: admin
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-dev-dev
+  attrs:
+    name: naas-payments-backend-dev-dev
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-dev
+      naas_team: payments
+      naas_role: dev
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-dev-viewer
+  attrs:
+    name: naas-payments-backend-dev-viewer
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-dev
+      naas_team: payments
+      naas_role: viewer
+- model: authentik_rbac.role
+  state: present
+  identifiers:
+    name: naas-payments-backend-dev-manager
+  attrs:
+    name: naas-payments-backend-dev-manager
+    groups:
+    - '!Find':
+      - authentik_core.group
+      - - name
+        - naas-payments-admin

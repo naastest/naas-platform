@@ -1,0 +1,48 @@
+version: 1
+metadata:
+  name: naas-namespace-groups-payments-backend-test
+entries:
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-test-admin
+  attrs:
+    name: naas-payments-backend-test-admin
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-test
+      naas_team: payments
+      naas_role: admin
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-test-dev
+  attrs:
+    name: naas-payments-backend-test-dev
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-test
+      naas_team: payments
+      naas_role: dev
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-test-viewer
+  attrs:
+    name: naas-payments-backend-test-viewer
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-test
+      naas_team: payments
+      naas_role: viewer
+- model: authentik_rbac.role
+  state: present
+  identifiers:
+    name: naas-payments-backend-test-manager
+  attrs:
+    name: naas-payments-backend-test-manager
+    groups:
+    - '!Find':
+      - authentik_core.group
+      - - name
+        - naas-payments-admin

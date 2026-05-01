@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-backend-acceptance
+  labels:
+    naas.io/team: payments
+    naas.io/env: acceptance
+    naas.io/tier: backend
+    naas.io/app: checkout-service
+    naas.io/cost-center: fin-123
+    naas.io/compliance: pci
+  annotations:
+    naas.io/owner-email: payments-team@naas.local
+    naas.io/description: Payments team backend services

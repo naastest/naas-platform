@@ -1,0 +1,48 @@
+version: 1
+metadata:
+  name: naas-namespace-groups-payments-backend-production
+entries:
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-production-admin
+  attrs:
+    name: naas-payments-backend-production-admin
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-production
+      naas_team: payments
+      naas_role: admin
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-production-dev
+  attrs:
+    name: naas-payments-backend-production-dev
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-production
+      naas_team: payments
+      naas_role: dev
+- model: authentik_core.group
+  state: present
+  identifiers:
+    name: naas-payments-backend-production-viewer
+  attrs:
+    name: naas-payments-backend-production-viewer
+    is_superuser: false
+    attributes:
+      naas_namespace: payments-backend-production
+      naas_team: payments
+      naas_role: viewer
+- model: authentik_rbac.role
+  state: present
+  identifiers:
+    name: naas-payments-backend-production-manager
+  attrs:
+    name: naas-payments-backend-production-manager
+    groups:
+    - '!Find':
+      - authentik_core.group
+      - - name
+        - naas-payments-admin

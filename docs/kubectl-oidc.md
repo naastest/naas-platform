@@ -45,7 +45,10 @@ users:
         - --oidc-issuer-url=https://authentik.naas.local/
         - --oidc-client-id=kubernetes
         - --oidc-extra-scope=groups
+        - --oidc-extra-scope=email
+        - --oidc-extra-scope=profile
         - --listen-address=localhost:8000
+        - --certificate-authority=/Users/joris/.kube/naas-local-ca.crt
 
 contexts:
 - context:

@@ -1,0 +1,75 @@
+# Authentik Blueprint: per-namespace groups + tenant-admin delegation
+#
+# Context variables (set at apply time or via generate-namespace-blueprint.py):
+#   namespace : full namespace name, e.g. payments-backend-dev
+#   team      : team label value,     e.g. payments
+#
+# What this creates:
+#   Groups:
+#     naas-{namespace}-admin   → k8s RoleBinding: namespace-admin   (this namespace only)
+#     naas-{namespace}-dev     → k8s RoleBinding: namespace-developer
+#     naas-{namespace}-viewer  → k8s RoleBinding: namespace-viewer
+#
+#   Role:
+#     naas-{namespace}-manager — holds add/remove/view permissions on the 3 groups above
+#     Assigned to: naas-{team}-admin group
+#     Effect: members of naas-{team}-admin can self-service manage namespace group membership
+#
+# Apply via:
+#   scripts/apply-namespace-blueprint.py namespaces/{namespace}/namespace.yaml
+version: 1
+metadata:
+  name: !Format ["naas-namespace-groups-%(namespace)s", {namespace: !Context namespace}]
+entries:
+  # ── Groups ──────────────────────────────────────────────────────────────────
+
+  - model: authentik_core.group
+    state: present
+    identifiers:
+      name: !Format ["naas-%(namespace)s-admin", {namespace: !Context namespace}]
+    attrs:
+      name: !Format ["naas-%(namespace)s-admin", {namespace: !Context namespace}]
+      is_superuser: false
+      attributes:
+        naas_namespace: !Context namespace
+        naas_team: !Context team
+        naas_role: admin
+
+  - model: authentik_core.group
+    state: present
+    identifiers:
+      name: !Format ["naas-%(namespace)s-dev", {namespace: !Context namespace}]
+    attrs:
+      name: !Format ["naas-%(namespace)s-dev", {namespace: !Context namespace}]
+      is_superuser: false
+      attributes:
+        naas_namespace: !Context namespace
+        naas_team: !Context team
+        naas_role: developer
+
+  - model: authentik_core.group
+    state: present
+    identifiers:
+      name: !Format ["naas-%(namespace)s-viewer", {namespace: !Context namespace}]
+    attrs:
+      name: !Format ["naas-%(namespace)s-viewer", {namespace: !Context namespace}]
+      is_superuser: false
+      attributes:
+        naas_namespace: !Context namespace
+        naas_team: !Context team
+        naas_role: viewer
+
+  # ── Manager Role ─────────────────────────────────────────────────────────────
+  # Grants the team-admin group ability to manage membership of the 3 namespace
+  # groups without needing full Authentik admin access.
+
+  - model: authentik_rbac.role
+    state: present
+    identifiers:
+      name: !Format ["naas-%(namespace)s-manager", {namespace: !Context namespace}]
+    attrs:
+      name: !Format ["naas-%(namespace)s-manager", {namespace: !Context namespace}]
+      # Assign this role to the team-wide admin group so all team admins can
+      # manage membership in this namespace's groups.
+      groups:
+        - !Find [authentik_core.group, [name, !Format ["naas-%(team)s-admin", {team: !Context team}]]]
