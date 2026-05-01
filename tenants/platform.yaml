@@ -94,7 +94,9 @@ spec:
     - name: production
       namespace: "platform-*"
 
-  clusterResourceWhitelist: []
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
 
   namespaceResourceWhitelist:
     - group: "apps"

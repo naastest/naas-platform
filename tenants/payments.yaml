@@ -112,7 +112,9 @@ spec:
     - name: production
       namespace: "payments-*"
 
-  clusterResourceWhitelist: []
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
 
   namespaceResourceWhitelist:
     - group: "apps"
