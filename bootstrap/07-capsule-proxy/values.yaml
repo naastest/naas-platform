@@ -26,9 +26,11 @@ gangplank:
     clusterName: "naas-local"
 
     # User's browser is redirected here to authenticate
-    authorizeURL: "https://authentik.naas.local/application/o/gangplank/authorize/"
+    # Authentik 2026.x: authorize/token are at /application/o/{endpoint}/ (no slug prefix)
+    # The client_id param identifies which provider to use
+    authorizeURL: "https://authentik.naas.local/application/o/authorize/"
     # Gangplank server calls this directly (same URL — CA cert is mounted)
-    tokenURL: "https://authentik.naas.local/application/o/gangplank/token/"
+    tokenURL: "https://authentik.naas.local/application/o/token/"
 
     redirectURL: "https://gangplank.naas.local/callback"
 
