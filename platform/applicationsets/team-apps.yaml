@@ -9,8 +9,8 @@
 #   apps/acceptance/   → deployed to acceptance cluster
 #   apps/production/   → deployed to production cluster
 #
-# allowEmpty: true — repos that haven't created an apps/{env}/ dir yet are
-# silently skipped instead of raising a ComparisonError.
+# pathsExist filter: repos that haven't created the apps/{env}/ dir yet are
+# silently skipped — no Application is created until the directory exists.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -29,6 +29,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["apps/dev"]
         cloneProtocol: https
   template:
     metadata:
@@ -44,7 +45,6 @@ spec:
         path: apps/dev
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: dev
         namespace: argocd   # default; resources carry their own namespace
@@ -72,6 +72,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["apps/test"]
         cloneProtocol: https
   template:
     metadata:
@@ -87,7 +88,6 @@ spec:
         path: apps/test
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: test
         namespace: argocd
@@ -115,6 +115,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["apps/acceptance"]
         cloneProtocol: https
   template:
     metadata:
@@ -130,7 +131,6 @@ spec:
         path: apps/acceptance
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: acceptance
         namespace: argocd
@@ -158,6 +158,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["apps/production"]
         cloneProtocol: https
   template:
     metadata:
@@ -173,7 +174,6 @@ spec:
         path: apps/production
         directory:
           recurse: false
-          allowEmpty: true
       destination:
         name: production
         namespace: argocd

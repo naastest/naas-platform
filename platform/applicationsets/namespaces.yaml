@@ -7,6 +7,9 @@
 # Teams own their namespace definitions in their own repos (shift-left).
 # Kyverno + Capsule enforce guardrails automatically on the cluster side.
 #
+# pathsExist filter: repos without a namespaces/{env}/ directory are silently
+# skipped — no Application is created until the directory exists.
+#
 # Prerequisites:
 # - A GitHub token stored in Secret argocd-scm-token (key: token) in the argocd namespace.
 #   The token needs org:read + repo:read scope to discover repos.
@@ -31,6 +34,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["namespaces/dev"]
         cloneProtocol: https
   template:
     metadata:
@@ -72,6 +76,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["namespaces/test"]
         cloneProtocol: https
   template:
     metadata:
@@ -113,6 +118,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["namespaces/acceptance"]
         cloneProtocol: https
   template:
     metadata:
@@ -154,6 +160,7 @@ spec:
         filters:
           - repositoryMatch: "^team-"
             branchMatch: "^main$"
+            pathsExist: ["namespaces/production"]
         cloneProtocol: https
   template:
     metadata:
