@@ -5,7 +5,7 @@ SKAFFOLD_PROFILE ?= local
 CYAN  := \033[36m
 RESET := \033[0m
 
-.PHONY: up down reset hosts bootstrap fix-ca coredns-patch tunnel \
+.PHONY: up down reset hosts bootstrap fix-ca coredns-patch fix-kubeconfig tunnel \
         apply-namespace-blueprint status logs kyverno-test validate-ns \
         ns-add help
 
@@ -31,7 +31,17 @@ reset: ## Full wipe — delete minikube profile and rebuild from scratch
 
 # ── Post-start fixups (run automatically after up, or manually after restart) ─
 
-post-start: hosts fix-ca coredns-patch ## Run all post-start fixups (hosts, CA, CoreDNS)
+post-start: fix-kubeconfig hosts fix-ca coredns-patch ## Run all post-start fixups (kubeconfig, hosts, CA, CoreDNS)
+
+fix-kubeconfig: ## Fix naas-local kubeconfig user credentials (minikube update-context blanks them)
+	@echo "==> Fixing naas-local kubeconfig credentials..."
+	@minikube update-context --profile $(PROFILE) 2>/dev/null || true
+	@kubectl config set-credentials $(PROFILE) \
+	  --client-certificate=$(HOME)/.minikube/profiles/$(PROFILE)/client.crt \
+	  --client-key=$(HOME)/.minikube/profiles/$(PROFILE)/client.key
+	@kubectl config set-cluster $(PROFILE) \
+	  --certificate-authority=$(HOME)/.minikube/ca.crt
+	@echo "    naas-local kubeconfig credentials restored."
 
 hosts: ## Configure /etc/resolver/naas.local for *.naas.local DNS (macOS)
 	@./bootstrap/configure-hosts.sh

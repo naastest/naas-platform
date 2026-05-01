@@ -155,15 +155,22 @@ kubectl get namespaces
 
 ### `*.naas.local` not reachable in browser
 
-Most common cause: tunnel is not running.
+**First check:** is the tunnel running? Start it in a separate terminal:
 
 ```bash
-# Check
-curl -sk https://argocd.naas.local/healthz 2>&1 | head -1
-
-# Fix
-make tunnel   # in a separate terminal
+make tunnel
 ```
+
+**If the tunnel crashes immediately with TLS errors** (`x509: "minikube" certificate is not standards compliant`):
+
+`minikube update-context` sometimes resets the `naas-local` kubeconfig user to empty `{}`, breaking TLS auth. Fix it:
+
+```bash
+make fix-kubeconfig   # restores client cert credentials in ~/.kube/config
+make tunnel           # now works
+```
+
+`make post-start` includes `fix-kubeconfig` automatically.
 
 If the tunnel is running but URLs still fail:
 
