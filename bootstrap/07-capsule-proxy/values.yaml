@@ -13,6 +13,10 @@ options:
   # indexes each namespace where Kyverno has generated a naas-{admin,developer,viewer}
   # RoleBinding for the team group — and returns only those namespaces for the user.
   roleBindingReflector: true
+  # Platform admins bypass capsule-proxy filtering entirely — their requests go
+  # straight to the kube-apiserver where the cluster-admin ClusterRoleBinding applies.
+  ignoredUserGroups:
+    - naas-platform-admin
 
 gangplank:
   enabled: true
