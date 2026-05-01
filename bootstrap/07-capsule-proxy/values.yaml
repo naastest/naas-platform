@@ -1,7 +1,9 @@
 options:
   # Use the same username claim as the kube-apiserver
   oidcUsernameClaim: preferred_username
-  # Bearer token from the OIDC id_token (set by kubelogin)
+  # Bearer token from the Gangplank id_token is forwarded to the kube-apiserver.
+  # kube-apiserver validates it via OIDC (issuer=https://authentik.naas.local/,
+  # client-id=gangplank). The Gangplank Authentik provider must have issuer_mode=global.
   authPreferredTypes: "BearerToken"
   # TLS is handled by ingress-nginx; capsule-proxy listens plain HTTP internally
   enableSSL: false

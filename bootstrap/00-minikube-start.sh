@@ -17,7 +17,7 @@ minikube start \
   --kubernetes-version="$K8S_VERSION" \
   --addons=ingress,ingress-dns,metrics-server \
   --extra-config=apiserver.oidc-issuer-url=https://authentik.naas.local/ \
-  --extra-config=apiserver.oidc-client-id=kubernetes \
+  --extra-config=apiserver.oidc-client-id=gangplank \
   --extra-config=apiserver.oidc-username-claim=preferred_username \
   --extra-config=apiserver.oidc-username-prefix=- \
   --extra-config=apiserver.oidc-groups-claim=groups \
