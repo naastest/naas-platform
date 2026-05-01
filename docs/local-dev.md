@@ -15,18 +15,42 @@ brew install --cask docker
 # 1. Start the full stack (minikube + platform components)
 make up
 
-# 2. Configure DNS for *.naas.local hostnames
-make hosts
+# 2. Open a tunnel — REQUIRED for browser and OIDC access (keep this terminal open)
+make tunnel
 
-# 3. Hand over control to ArgoCD
+# 3. Fix DNS, CA cert, and CoreDNS (in a separate terminal)
+make post-start
+
+# 4. Hand over control to ArgoCD
 make bootstrap
 ```
+
+> **The tunnel is the most common cause of "things are unreachable".** It must stay running
+> in a dedicated terminal. Without it the ingress-nginx LoadBalancer stays `<pending>` and
+> `*.naas.local` returns connection refused.
 
 After `make bootstrap`:
 - **ArgoCD UI**: https://argocd.naas.local
   - Initial password: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d`
 - **Authentik UI**: https://authentik.naas.local
   - Initial credentials: set in `bootstrap/06-authentik/values.yaml`
+
+## Resuming after a machine restart
+
+After `minikube stop` / machine sleep / reboot, the cluster state is preserved but three things reset:
+
+```bash
+# 1. Start the cluster
+minikube start --profile naas-local
+
+# 2. Re-inject CA cert + re-patch CoreDNS (both reset on stop/start)
+make post-start
+
+# 3. Start the tunnel again (separate terminal)
+make tunnel
+```
+
+The CA cert in the Minikube container and the CoreDNS patch are both ephemeral — they must be re-applied after every start.
 
 ## Teardown
 
