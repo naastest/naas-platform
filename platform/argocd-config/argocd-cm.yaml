@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
 data:
   url: http://argocd.naas.local
+  application.resourceTrackingMethod: annotation
   oidc.config: |
     name: Authentik
     issuer: http://authentik.naas.local/application/o/argocd/
