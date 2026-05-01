@@ -1,0 +1,33 @@
+options:
+  # Use the same username claim as the kube-apiserver
+  oidcUsernameClaim: preferred_username
+  # Bearer token from the OIDC id_token (set by kubelogin)
+  authPreferredTypes: "BearerToken"
+  # TLS is handled by ingress-nginx; capsule-proxy listens plain HTTP internally
+  enableSSL: false
+
+# capsule-proxy needs to reach the real kube-apiserver
+# In minikube this is the in-cluster service
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 9001
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    # Pass the OIDC bearer token through without stripping it
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "false"
+    # Proxy websockets (needed for kubectl exec/logs)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  hosts:
+    - host: capsule-proxy.naas.local
+      paths: ["/"]
+  tls:
+    - secretName: capsule-proxy-naas-local-tls
+      hosts:
+        - capsule-proxy.naas.local

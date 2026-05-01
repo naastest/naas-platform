@@ -19,8 +19,19 @@ metadata:
     naas.io/tenant-tier: medium
 spec:
   owners:
+    # All three groups are listed as owners so capsule-proxy can filter
+    # namespace listings to only show payments-* namespaces to team members.
+    # The clusterRoles here determine what owners can do at tenant scope;
+    # fine-grained namespace access is controlled by Kyverno-generated RoleBindings.
     - kind: Group
       name: naas-payments-admin
+      clusterRoles: ["admin", "capsule-namespace-deleter"]
+    - kind: Group
+      name: naas-payments-dev
+      clusterRoles: ["edit"]
+    - kind: Group
+      name: naas-payments-viewer
+      clusterRoles: ["view"]
 
   # ── Tenant aggregate quota (medium tier) ─────────────────────────────────
   resourceQuotas:

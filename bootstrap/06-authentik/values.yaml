@@ -19,6 +19,22 @@ server:
       - secretName: authentik-tls
         hosts:
           - authentik.naas.local
+  volumes:
+    - name: naas-blueprints
+      configMap:
+        name: naas-authentik-blueprints
+  volumeMounts:
+    - name: naas-blueprints
+      mountPath: /blueprints/custom
+
+worker:
+  volumes:
+    - name: naas-blueprints
+      configMap:
+        name: naas-authentik-blueprints
+  volumeMounts:
+    - name: naas-blueprints
+      mountPath: /blueprints/custom
 
 postgresql:
   enabled: true   # bundled postgres for local dev; use external in production

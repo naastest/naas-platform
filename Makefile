@@ -1,51 +1,69 @@
-PROFILE ?= naas-local
+PROFILE        ?= naas-local
 SKAFFOLD_PROFILE ?= local
 
-.PHONY: up down reset hosts bootstrap proxy proxy-stop status logs ns-add help
+# ── colours ──────────────────────────────────────────────────────────────────
+CYAN  := \033[36m
+RESET := \033[0m
+
+.PHONY: up down reset hosts bootstrap fix-ca coredns-patch tunnel \
+        apply-namespace-blueprint status logs kyverno-test validate-ns \
+        ns-add help
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
+	  awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-28s$(RESET) %s\n", $$1, $$2}'
+
+# ── Cluster lifecycle ─────────────────────────────────────────────────────────
 
 up: ## Start minikube + deploy full platform stack
 	@./bootstrap/00-minikube-start.sh
 	@skaffold run -p $(SKAFFOLD_PROFILE)
-	@$(MAKE) hosts
+	@$(MAKE) post-start
 	@echo ""
 	@echo "==> Platform up. Run 'make bootstrap' to hand control to ArgoCD."
 
-down: ## Tear down Skaffold deployments (keep minikube)
+down: ## Tear down Skaffold deployments (keep minikube running)
 	skaffold delete -p $(SKAFFOLD_PROFILE)
 
-reset: ## Full wipe: delete minikube profile and rebuild
+reset: ## Full wipe — delete minikube profile and rebuild from scratch
 	minikube delete --profile $(PROFILE) || true
 	@$(MAKE) up
+
+# ── Post-start fixups (run automatically after up, or manually after restart) ─
+
+post-start: hosts fix-ca coredns-patch ## Run all post-start fixups (hosts, CA, CoreDNS)
 
 hosts: ## Configure /etc/resolver/naas.local for *.naas.local DNS (macOS)
 	@./bootstrap/configure-hosts.sh
 
-bootstrap: ## Apply ArgoCD root app (hands over GitOps control to ArgoCD)
+fix-ca: ## Inject naas-local CA cert into minikube + ~/.kube for OIDC TLS
+	@./bootstrap/fix-ca.sh
+
+coredns-patch: ## Patch CoreDNS to resolve *.naas.local to ingress-nginx inside cluster
+	@./bootstrap/coredns-patch.sh
+
+tunnel: ## Start minikube tunnel (required for OIDC login from macOS host)
+	@echo "==> Starting minikube tunnel (keep this terminal open)..."
+	@echo "    This exposes ingress-nginx on 127.0.0.1:443 so browsers can reach authentik.naas.local"
+	minikube tunnel --profile $(PROFILE)
+
+# ── ArgoCD handover ───────────────────────────────────────────────────────────
+
+bootstrap: ## Apply ArgoCD root app-of-apps (hands GitOps control to ArgoCD)
 	@echo "==> Waiting for ArgoCD server to be ready..."
 	@kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=120s
 	@echo "==> Applying root App-of-Apps..."
 	kubectl apply -f platform/app-of-apps.yaml
 	@echo ""
 	@echo "==> ArgoCD is now managing the platform."
-	@echo "    ArgoCD UI: https://argocd.naas.local"
-	@echo "    Initial password: $$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || echo '[not found - OIDC already active]')"
+	@echo "    ArgoCD UI : https://argocd.naas.local"
+	@echo "    Password  : $$(kubectl -n argocd get secret argocd-initial-admin-secret \
+	                          -o jsonpath='{.data.password}' 2>/dev/null | base64 -d \
+	                          || echo '[not found — OIDC already active]')"
 
-status: ## Show ArgoCD application sync status
-	kubectl get applications -n argocd
+# ── Namespace management ──────────────────────────────────────────────────────
 
-logs: ## Stream ArgoCD application controller logs
-	kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller -f
-
-kyverno-test: ## Run Kyverno policy tests
-	kyverno test policies/
-
-validate-ns: ## Validate all namespace YAML files against label schema
-	python3 scripts/validate-namespace-labels.py namespaces/
-
-ns-add: ## Scaffold a new namespace (usage: make ns-add TEAM=payments TIER=backend ENV=dev COMPLIANCE=standard COST_CENTER=fin-123 APP=checkout)
+ns-add: ## Scaffold new namespace (TEAM= TIER= ENV= APP= COMPLIANCE= COST_CENTER=)
 	@[ -n "$(TEAM)" ] || (echo "Usage: make ns-add TEAM=<team> TIER=<tier> ENV=<env> APP=<app> COMPLIANCE=standard COST_CENTER=<cc>"; exit 1)
 	@DIR=namespaces/$(TEAM)-$(TIER)-$(ENV); \
 	 if [ -d "$$DIR" ]; then echo "ERROR: $$DIR already exists"; exit 1; fi; \
@@ -58,4 +76,26 @@ ns-add: ## Scaffold a new namespace (usage: make ns-add TEAM=payments TIER=backe
 	   -e 's/COST_CENTER_PLACEHOLDER/$(COST_CENTER)/g' \
 	   -e 's/APP_PLACEHOLDER/$(APP)/g' \
 	   "$$DIR/namespace.yaml" && rm -f "$$DIR/namespace.yaml.bak"; \
-	 echo "Created $$DIR/namespace.yaml — review labels and open a PR"
+	 echo "Created $$DIR/namespace.yaml — review labels then run:"; \
+	 echo "  make apply-namespace-blueprint NS=$$DIR"
+
+apply-namespace-blueprint: ## Apply Authentik groups + delegation for a namespace (NS=namespaces/...)
+	@[ -n "$(NS)" ] || (echo "Usage: make apply-namespace-blueprint NS=namespaces/<name>"; exit 1)
+	@[ -n "$(AUTHENTIK_TOKEN)" ] || (echo "Error: AUTHENTIK_TOKEN is not set"; exit 1)
+	uv run scripts/apply-namespace-blueprint.py $(NS)/namespace.yaml
+
+# ── Observability ─────────────────────────────────────────────────────────────
+
+status: ## Show ArgoCD application sync status
+	kubectl get applications -n argocd
+
+logs: ## Stream ArgoCD application-controller logs
+	kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller -f
+
+# ── Validation ────────────────────────────────────────────────────────────────
+
+kyverno-test: ## Run Kyverno policy tests
+	kyverno test policies/
+
+validate-ns: ## Validate all namespace YAML files against label schema
+	uv run scripts/validate-namespace-labels.py namespaces/
