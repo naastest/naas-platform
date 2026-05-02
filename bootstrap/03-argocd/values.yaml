@@ -93,23 +93,20 @@ notifications:
       - when: >-
           app.status.health.status == 'Healthy' &&
           app.status.sync.status == 'Synced' &&
-          has(app.metadata.annotations) &&
-          has(app.metadata.annotations['preview.naas.io/pr-number'])
+          'preview.naas.io/pr-number' in app.metadata.annotations
         oncePer: app.status.sync.revision
         send: [preview-deployed]
     trigger.on-preview-degraded: |
       - when: >-
           app.status.health.status == 'Degraded' &&
-          has(app.metadata.annotations) &&
-          has(app.metadata.annotations['preview.naas.io/pr-number'])
+          'preview.naas.io/pr-number' in app.metadata.annotations
         oncePer: app.status.sync.revision
         send: [preview-degraded]
     trigger.on-preview-sync-failed: |
       - when: >-
           app.status.operationState != nil &&
           app.status.operationState.phase == 'Failed' &&
-          has(app.metadata.annotations) &&
-          has(app.metadata.annotations['preview.naas.io/pr-number'])
+          'preview.naas.io/pr-number' in app.metadata.annotations
         oncePer: app.status.operationState.startedAt
         send: [preview-sync-failed]
 
