@@ -11,6 +11,13 @@
 #
 # pathsExist filter: repos that haven't created the apps/{env}/ dir yet are
 # silently skipped — no Application is created until the directory exists.
+#
+# Security: project is derived from the repo name (team-payments → payments)
+# so each Application is bound to the team's own AppProject. This prevents
+# teams from deploying cluster-scoped resources (Tenant, ClusterRole, etc.)
+# or resources in other teams' namespaces. The destination namespace is a
+# dummy value that matches the AppProject's {team}-* pattern; individual
+# manifests always specify their own namespace explicitly.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -38,7 +45,7 @@ spec:
         naas.io/managed-by: apps-applicationset
         naas.io/env: dev
     spec:
-      project: default
+      project: '{{trimPrefix "team-" .repository}}'
       source:
         repoURL: "{{.url}}"
         targetRevision: "{{.branch}}"
@@ -47,7 +54,7 @@ spec:
           recurse: false
       destination:
         name: dev
-        namespace: argocd   # default; resources carry their own namespace
+        namespace: '{{trimPrefix "team-" .repository}}-default'
       syncPolicy:
         automated:
           prune: true
@@ -81,7 +88,7 @@ spec:
         naas.io/managed-by: apps-applicationset
         naas.io/env: test
     spec:
-      project: default
+      project: '{{trimPrefix "team-" .repository}}'
       source:
         repoURL: "{{.url}}"
         targetRevision: "{{.branch}}"
@@ -90,7 +97,7 @@ spec:
           recurse: false
       destination:
         name: test
-        namespace: argocd
+        namespace: '{{trimPrefix "team-" .repository}}-default'
       syncPolicy:
         automated:
           prune: true
@@ -124,7 +131,7 @@ spec:
         naas.io/managed-by: apps-applicationset
         naas.io/env: acceptance
     spec:
-      project: default
+      project: '{{trimPrefix "team-" .repository}}'
       source:
         repoURL: "{{.url}}"
         targetRevision: "{{.branch}}"
@@ -133,7 +140,7 @@ spec:
           recurse: false
       destination:
         name: acceptance
-        namespace: argocd
+        namespace: '{{trimPrefix "team-" .repository}}-default'
       syncPolicy:
         automated:
           prune: true
@@ -167,7 +174,7 @@ spec:
         naas.io/managed-by: apps-applicationset
         naas.io/env: production
     spec:
-      project: default
+      project: '{{trimPrefix "team-" .repository}}'
       source:
         repoURL: "{{.url}}"
         targetRevision: "{{.branch}}"
@@ -176,7 +183,7 @@ spec:
           recurse: false
       destination:
         name: production
-        namespace: argocd
+        namespace: '{{trimPrefix "team-" .repository}}-default'
       syncPolicy:
         automated:
           prune: true

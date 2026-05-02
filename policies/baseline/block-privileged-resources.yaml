@@ -1,0 +1,54 @@
+---
+# Defense-in-depth: blocks direct kubectl creation of Tenant and AppProject
+# by non-platform users. This guards the kubectl-direct vector.
+#
+# The ArgoCD vector (team repo → ApplicationSet) is blocked at the AppProject
+# layer: team ApplicationSets now bind to project: {team}, whose
+# clusterResourceWhitelist only allows Namespace — so ArgoCD itself refuses
+# to sync Tenant or AppProject manifests from team repos.
+#
+# Excludes argocd-application-controller so the platform-tenants app can
+# still reconcile Tenants and AppProjects from the naas-platform repo.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-privileged-resources
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: block-tenant-creation
+      match:
+        any:
+          - resources:
+              kinds:
+                - capsule.clastix.io/*/Tenant
+      exclude:
+        any:
+          - subjects:
+              - kind: ServiceAccount
+                name: argocd-application-controller
+                namespace: argocd
+          - clusterRoles:
+              - cluster-admin
+      validate:
+        message: "Tenant resources are platform-managed. Request a new tenant via a PR to the naas-platform repo."
+        deny: {}
+
+    - name: block-appproject-creation
+      match:
+        any:
+          - resources:
+              kinds:
+                - argoproj.io/*/AppProject
+      exclude:
+        any:
+          - subjects:
+              - kind: ServiceAccount
+                name: argocd-application-controller
+                namespace: argocd
+          - clusterRoles:
+              - cluster-admin
+      validate:
+        message: "AppProject resources are platform-managed. They are generated automatically when a Tenant is created."
+        deny: {}
