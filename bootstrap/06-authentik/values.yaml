@@ -41,6 +41,7 @@ postgresql:
   auth:
     password: "authentik-pg-local"
     database: authentik
+    usePasswordFiles: false   # avoid POSTGRES_PASSWORD_FILE conflict with old field managers
 
 redis:
   enabled: true   # bundled redis for local dev; use external in production
