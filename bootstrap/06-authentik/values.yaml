@@ -16,7 +16,7 @@ server:
     hosts:
       - authentik.naas.local
     tls:
-      - secretName: authentik-tls
+      - secretName: authentik-naas-local-tls
         hosts:
           - authentik.naas.local
   volumes:
