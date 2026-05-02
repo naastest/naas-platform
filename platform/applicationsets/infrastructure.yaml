@@ -1,0 +1,96 @@
+# Infrastructure components — Helm operators and controllers that must exist before
+# team workloads can run. ArgoCD manages upgrades and drift after the one-time
+# bootstrap install.
+#
+# Each Application uses multi-source:
+#   source[0]  — Helm chart from the upstream chart registry (pinned version)
+#   source[1]  — values file from this git repo (bootstrap/{component}/values.yaml)
+#
+# Bootstrap note: these apps assume the controllers are already installed once by
+# the bootstrap scripts (chicken-and-egg: Kyverno webhooks must be ready before
+# namespace creation, Capsule before Tenant CRs, etc.). After the first bootstrap
+# ArgoCD takes over drift correction and upgrades.
+#
+# To add a new component: append an element to the list generator and create a
+# bootstrap/{component}/values.yaml file.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - name: cert-manager
+            namespace: cert-manager
+            repoURL: https://charts.jetstack.io
+            chart: cert-manager
+            version: v1.17.2
+            valuesPath: bootstrap/cert-manager/values.yaml
+
+          - name: sealed-secrets
+            namespace: kube-system
+            repoURL: https://bitnami-labs.github.io/sealed-secrets
+            chart: sealed-secrets
+            version: 2.18.5
+            valuesPath: bootstrap/01-sealed-secrets/values.yaml
+
+          - name: ingress-nginx
+            namespace: ingress-nginx
+            repoURL: https://kubernetes.github.io/ingress-nginx
+            chart: ingress-nginx
+            version: 4.12.2
+            valuesPath: bootstrap/02-ingress-nginx/values.yaml
+
+          - name: capsule
+            namespace: capsule-system
+            repoURL: https://projectcapsule.github.io/charts
+            chart: capsule
+            version: 0.7.3
+            valuesPath: bootstrap/04-capsule/values.yaml
+
+          - name: kyverno
+            namespace: kyverno
+            repoURL: https://kyverno.github.io/kyverno/
+            chart: kyverno
+            version: 3.3.7
+            valuesPath: bootstrap/05-kyverno/values.yaml
+
+          - name: capsule-proxy
+            namespace: capsule-system
+            repoURL: https://projectcapsule.github.io/charts
+            chart: capsule-proxy
+            version: 0.12.0
+            valuesPath: bootstrap/07-capsule-proxy/values.yaml
+
+  template:
+    metadata:
+      name: "infra-{{.name}}"
+      labels:
+        naas.io/managed-by: infrastructure-applicationset
+    spec:
+      project: platform
+      sources:
+        - repoURL: "{{.repoURL}}"
+          chart: "{{.chart}}"
+          targetRevision: "{{.version}}"
+          helm:
+            releaseName: "{{.name}}"
+            valueFiles:
+              - "$values/{{.valuesPath}}"
+        - repoURL: https://github.com/naastest/naas-platform.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        name: dev
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: false      # never auto-prune infrastructure — require manual action
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
