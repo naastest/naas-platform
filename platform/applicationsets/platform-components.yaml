@@ -36,9 +36,22 @@ spec:
       destination:
         name: dev         # use cluster name, not server URL — avoids ambiguity when multiple clusters share kubernetes.default.svc
         namespace: argocd
+      ignoreDifferences:
+        # Kyverno's defaulting webhook adds these fields after every apply.
+        # Ignoring them prevents permanent OutOfSync on all ClusterPolicies.
+        - group: kyverno.io
+          kind: ClusterPolicy
+          jqPathExpressions:
+            - .spec.admission
+            - .spec.emitWarning
+            - .spec.rules[].skipBackgroundRequests
+            - ".spec.rules[].validate.allowExistingViolations"
+            - ".spec.rules[].mutate.allowExistingViolations"
+            - ".spec.rules[].generate.allowExistingViolations"
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
