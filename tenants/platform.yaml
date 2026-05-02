@@ -120,8 +120,6 @@ spec:
       kind: "ClusterRole"
     - group: "rbac.authorization.k8s.io"
       kind: "ClusterRoleBinding"
-    - group: "argoproj.io"
-      kind: "AppProject"
     - group: "capsule.clastix.io"
       kind: "Tenant"
 
@@ -146,6 +144,11 @@ spec:
       kind: "*"
     - group: "policy"
       kind: "PodDisruptionBudget"
+    # ArgoCD resources are namespace-scoped (live in argocd ns), not cluster-scoped
+    - group: "argoproj.io"
+      kind: "AppProject"
+    - group: "argoproj.io"
+      kind: "ApplicationSet"
 
   namespaceResourceBlacklist:
     - group: ""
