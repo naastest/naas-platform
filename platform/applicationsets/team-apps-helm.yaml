@@ -51,7 +51,7 @@ spec:
                 - path: "apps/helm/dev/*.yaml"
   template:
     metadata:
-      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.basename | trimSuffix `.yaml`}}-dev"
+      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.filename | trimSuffix `.yaml`}}-dev"
       labels:
         naas.io/managed-by: helm-applicationset
         naas.io/env: dev
@@ -62,7 +62,7 @@ spec:
         chart: service
         targetRevision: "0.1.0"
         helm:
-          releaseName: '{{.path.basename | trimSuffix ".yaml"}}'
+          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
           valuesObject:
             image: "{{.image}}"
             containerPort: '{{.containerPort | default "8080"}}'
@@ -111,7 +111,7 @@ spec:
                 - path: "apps/helm/test/*.yaml"
   template:
     metadata:
-      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.basename | trimSuffix `.yaml`}}-test"
+      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.filename | trimSuffix `.yaml`}}-test"
       labels:
         naas.io/managed-by: helm-applicationset
         naas.io/env: test
@@ -122,7 +122,7 @@ spec:
         chart: service
         targetRevision: "0.1.0"
         helm:
-          releaseName: '{{.path.basename | trimSuffix ".yaml"}}'
+          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
           valuesObject:
             image: "{{.image}}"
             containerPort: '{{.containerPort | default "8080"}}'
@@ -171,7 +171,7 @@ spec:
                 - path: "apps/helm/acceptance/*.yaml"
   template:
     metadata:
-      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.basename | trimSuffix `.yaml`}}-acceptance"
+      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.filename | trimSuffix `.yaml`}}-acceptance"
       labels:
         naas.io/managed-by: helm-applicationset
         naas.io/env: acceptance
@@ -182,7 +182,7 @@ spec:
         chart: service
         targetRevision: "0.1.0"
         helm:
-          releaseName: '{{.path.basename | trimSuffix ".yaml"}}'
+          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
           valuesObject:
             image: "{{.image}}"
             containerPort: '{{.containerPort | default "8080"}}'
@@ -231,7 +231,7 @@ spec:
                 - path: "apps/helm/production/*.yaml"
   template:
     metadata:
-      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.basename | trimSuffix `.yaml`}}-production"
+      name: "helm-{{trimPrefix `team-` .repository}}-{{.path.filename | trimSuffix `.yaml`}}-production"
       labels:
         naas.io/managed-by: helm-applicationset
         naas.io/env: production
@@ -242,7 +242,7 @@ spec:
         chart: service
         targetRevision: "0.1.0"
         helm:
-          releaseName: '{{.path.basename | trimSuffix ".yaml"}}'
+          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
           valuesObject:
             image: "{{.image}}"
             containerPort: '{{.containerPort | default "8080"}}'
