@@ -99,6 +99,7 @@ spec:
 
   sourceRepos:
     - "https://github.com/naastest/team-payments"
+    - "https://github.com/naastest/helm-charts"
     - "https://charts.bitnami.com/bitnami"
     - "https://charts.helm.sh/stable"
 

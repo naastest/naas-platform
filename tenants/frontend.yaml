@@ -90,6 +90,7 @@ spec:
 
   sourceRepos:
     - "https://github.com/naastest/team-frontend"
+    - "https://github.com/naastest/helm-charts"
     - "https://charts.bitnami.com/bitnami"
     - "https://charts.helm.sh/stable"
 
