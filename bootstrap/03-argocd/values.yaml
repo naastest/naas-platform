@@ -94,13 +94,13 @@ notifications:
           app.status.health.status == 'Healthy' &&
           app.status.sync.status == 'Synced' &&
           'preview.naas.io/pr-number' in app.metadata.annotations
-        oncePer: "{{index .app.status.sync.revisions 1}}"
+        oncePer: app.status.sync.revisions[1]
         send: [preview-deployed]
     trigger.on-preview-degraded: |
       - when: >-
           app.status.health.status == 'Degraded' &&
           'preview.naas.io/pr-number' in app.metadata.annotations
-        oncePer: "{{index .app.status.sync.revisions 1}}"
+        oncePer: app.status.sync.revisions[1]
         send: [preview-degraded]
     trigger.on-preview-sync-failed: |
       - when: >-
