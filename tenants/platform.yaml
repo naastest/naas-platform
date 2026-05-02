@@ -94,18 +94,19 @@ spec:
     - name: production
       namespace: "platform-*"
     # Platform components (ArgoCD, Kyverno, Capsule, Authentik, etc.) deploy
-    # into their own system namespaces on the dev (hub) cluster only.
-    - name: dev
+    # into their own system namespaces. Use server URL (not cluster name) to
+    # avoid name-resolution ambiguity in AppProject destination matching.
+    - server: "https://kubernetes.default.svc"
       namespace: "argocd"
-    - name: dev
+    - server: "https://kubernetes.default.svc"
       namespace: "kyverno"
-    - name: dev
+    - server: "https://kubernetes.default.svc"
       namespace: "capsule-system"
-    - name: dev
+    - server: "https://kubernetes.default.svc"
       namespace: "authentik"
-    - name: dev
+    - server: "https://kubernetes.default.svc"
       namespace: "ingress-nginx"
-    - name: dev
+    - server: "https://kubernetes.default.svc"
       namespace: "cert-manager"
 
   clusterResourceWhitelist:
