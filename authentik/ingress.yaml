@@ -1,29 +1,3 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: authentik-server
-  namespace: authentik
-  annotations:
-    meta.helm.sh/release-name: authentik
-    meta.helm.sh/release-namespace: authentik
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: authentik.naas.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: authentik-server
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - authentik.naas.local
-    secretName: authentik-naas-local-tls
----
 # Exposes /.well-known/openid-configuration at the root domain so the
 # Kubernetes API server can discover OIDC keys (issuer = https://authentik.naas.local/).
 # Authentik only serves this path under /application/o/{slug}/, so we
