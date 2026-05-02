@@ -1,26 +1,25 @@
-# PR Preview environments — one per open pull request on each team-* repo.
+# PR Preview environments — one Helm Application per service per open PR.
 #
-# When a developer opens a PR on their team repo, ArgoCD creates a temporary
-# Application that deploys the PR branch's apps/dev/ manifests into an
-# isolated namespace: {team}-preview-pr-{number}.
-#
-# When the PR is closed or merged, ArgoCD prunes the Application and its
-# resources automatically (no GitHub Actions token required).
+# Developers add or modify values files under apps/helm/dev/ in their PR branch.
+# ArgoCD detects the PR, reads every apps/helm/dev/*.yaml file from the PR's HEAD,
+# and creates one Application per file using the same service Helm chart as dev/prod.
+# Each Application gets an ingress injected automatically so the URL appears in the
+# PR status comment.
 #
 # Flow:
 #   1. Dev opens PR on team-payments (e.g. PR #42)
-#   2. ArgoCD detects it via the pullRequest generator (polls every 2 min)
-#   3. Creates Application "preview-team-payments-pr-42"
-#   4. Deploys apps/dev/ from the PR branch to namespace payments-preview-pr-42
-#   5. Dev tests at whatever URL their app exposes in that namespace
-#   6. PR merged → Application deleted → namespace pruned
+#   2. ArgoCD polls GitHub every 2 min via the pullRequest generator
+#   3. For each apps/helm/dev/*.yaml on the PR branch, creates one Application:
+#        preview-payments-pr-42-checkout-service
+#        preview-payments-pr-42-payment-api
+#   4. Each deploys to namespace payments-preview-pr-42 with its own ingress:
+#        checkout-service-pr-42.preview.naas.local
+#        payment-api-pr-42.preview.naas.local
+#   5. ArgoCD posts a PR comment with the ingress URLs
+#   6. PR merged → Applications deleted → namespace pruned
 #
-# NAMESPACE REQUIREMENT: manifests in apps/dev/ must NOT hardcode a namespace.
-# Use Kustomize overlays so ArgoCD can inject the preview namespace at deploy time.
-# See docs/pr-previews.md for the full overlay structure.
-#
-# To add a new team: copy this block and change `repo` and the team label.
-# One ApplicationSet per team repo is required (pullRequest generator is per-repo).
+# To add a new team: copy this block, change the pullRequest.github.repo and update
+# the project/team labels. One ApplicationSet per team repo is required.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -30,17 +29,24 @@ metadata:
 spec:
   goTemplate: true
   generators:
-    - pullRequest:
-        github:
-          owner: naastest
-          repo: team-payments
-          tokenRef:
-            secretName: argocd-scm-token
-            key: token
-        requeueAfterSeconds: 120
+    - matrix:
+        generators:
+          - pullRequest:
+              github:
+                owner: naastest
+                repo: team-payments
+                tokenRef:
+                  secretName: argocd-scm-token
+                  key: token
+              requeueAfterSeconds: 120
+          - git:
+              repoURL: "https://github.com/naastest/team-payments"
+              revision: "{{.head_sha}}"
+              files:
+                - path: "apps/helm/dev/*.yaml"
   template:
     metadata:
-      name: "preview-team-payments-pr-{{.number}}"
+      name: 'preview-payments-pr-{{.number}}-{{.path.filename | trimSuffix ".yaml"}}'
       labels:
         naas.io/managed-by: pr-preview
         naas.io/team: payments
@@ -56,12 +62,21 @@ spec:
         notifications.argoproj.io/subscribe.on-preview-sync-failed.github-comment: ""
     spec:
       project: payments
-      source:
-        repoURL: "https://github.com/naastest/team-payments"
-        targetRevision: "{{.head_sha}}"
-        path: apps/dev
-        directory:
-          recurse: false
+      sources:
+        - repoURL: "https://github.com/naastest/helm-charts"
+          path: charts/service
+          targetRevision: HEAD
+          helm:
+            releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
+            valueFiles:
+              - "$values/{{.path.path}}/{{.path.filename}}"
+            valuesObject:
+              ingress:
+                enabled: true
+                host: '{{.path.filename | trimSuffix ".yaml"}}-pr-{{.number}}.preview.naas.local'
+        - repoURL: "https://github.com/naastest/team-payments"
+          targetRevision: "{{.head_sha}}"
+          ref: values
       destination:
         name: dev
         namespace: "payments-preview-pr-{{.number}}"
