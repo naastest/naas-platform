@@ -93,10 +93,36 @@ spec:
       namespace: "platform-*"
     - name: production
       namespace: "platform-*"
+    # Platform components (ArgoCD, Kyverno, Capsule, Authentik, etc.) deploy
+    # into their own system namespaces on the dev (hub) cluster only.
+    - name: dev
+      namespace: "argocd"
+    - name: dev
+      namespace: "kyverno"
+    - name: dev
+      namespace: "capsule-system"
+    - name: dev
+      namespace: "authentik"
+    - name: dev
+      namespace: "ingress-nginx"
+    - name: dev
+      namespace: "cert-manager"
 
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
+    - group: "kyverno.io"
+      kind: "*"
+    - group: "wgpolicyk8s.io"
+      kind: "*"
+    - group: "rbac.authorization.k8s.io"
+      kind: "ClusterRole"
+    - group: "rbac.authorization.k8s.io"
+      kind: "ClusterRoleBinding"
+    - group: "argoproj.io"
+      kind: "AppProject"
+    - group: "capsule.clastix.io"
+      kind: "Tenant"
 
   namespaceResourceWhitelist:
     - group: "apps"
@@ -121,16 +147,10 @@ spec:
       kind: "PodDisruptionBudget"
 
   namespaceResourceBlacklist:
-    - group: "rbac.authorization.k8s.io"
-      kind: "*"
-    - group: "networking.k8s.io"
-      kind: "NetworkPolicy"
     - group: ""
       kind: "ResourceQuota"
     - group: ""
       kind: "LimitRange"
-    - group: "kyverno.io"
-      kind: "*"
     - group: "capsule.clastix.io"
       kind: "*"
 

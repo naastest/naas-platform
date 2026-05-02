@@ -26,11 +26,13 @@ spec:
       labels:
         naas.io/managed-by: platform-applicationset
     spec:
-      project: default
+      project: platform
       source:
         repoURL: https://github.com/naastest/naas-platform.git
         targetRevision: HEAD
         path: "{{.path}}"
+        directory:
+          recurse: true
       destination:
         name: dev         # use cluster name, not server URL — avoids ambiguity when multiple clusters share kubernetes.default.svc
         namespace: argocd
