@@ -1,0 +1,224 @@
+# Raw-manifest team workloads — one ArgoCD Application per namespace folder per env.
+#
+# Use this when your resource doesn't fit the Helm service chart (e.g. CronJobs,
+# ConfigMaps, NetworkPolicies, Jobs, ServiceAccounts, RBAC). For deployable services
+# use apps/helm/{env}/ instead.
+#
+# Directory layout expected in each team repo:
+#   apps/raw/dev/<namespace>/         → deployed to dev cluster
+#   apps/raw/test/<namespace>/        → deployed to test cluster
+#   apps/raw/acceptance/<namespace>/  → deployed to acceptance cluster
+#   apps/raw/production/<namespace>/  → deployed to production cluster
+#
+# Rules:
+#   - Each subdirectory name must be an existing namespace (teams own it via
+#     namespaces/{env}/). The Application fails to sync if the namespace does
+#     not exist — this is intentional; declare the namespace first.
+#   - Subdirectory names must match the team's AppProject namespace pattern
+#     ({team}-*). A payments team cannot deploy into a platform-* namespace.
+#   - Subdirectories may contain further subdirectories (recurse: true), useful
+#     for grouping manifests by type within a namespace.
+#   - All standard Kyverno policies apply (resource limits, no root, naas labels).
+#
+# Application naming: raw-{team}-{namespace}-{env}
+# e.g. apps/raw/dev/payments-jobs/ on team-payments → raw-payments-payments-jobs-dev
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-raw-dev
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              github:
+                organization: naastest
+                tokenRef:
+                  secretName: argocd-scm-token
+                  key: token
+              filters:
+                - repositoryMatch: "^team-"
+                  branchMatch: "^main$"
+                  pathsExist: ["apps/raw/dev"]
+              cloneProtocol: https
+          - git:
+              repoURL: "{{.url}}"
+              revision: "{{.branch}}"
+              directories:
+                - path: "apps/raw/dev/*"
+  template:
+    metadata:
+      name: "raw-{{trimPrefix `team-` .repository}}-{{.path.basename}}-dev"
+      labels:
+        naas.io/managed-by: raw-applicationset
+        naas.io/env: dev
+    spec:
+      project: '{{trimPrefix "team-" .repository}}'
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: "{{.path.path}}"
+        directory:
+          recurse: true
+      destination:
+        name: dev
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-raw-test
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              github:
+                organization: naastest
+                tokenRef:
+                  secretName: argocd-scm-token
+                  key: token
+              filters:
+                - repositoryMatch: "^team-"
+                  branchMatch: "^main$"
+                  pathsExist: ["apps/raw/test"]
+              cloneProtocol: https
+          - git:
+              repoURL: "{{.url}}"
+              revision: "{{.branch}}"
+              directories:
+                - path: "apps/raw/test/*"
+  template:
+    metadata:
+      name: "raw-{{trimPrefix `team-` .repository}}-{{.path.basename}}-test"
+      labels:
+        naas.io/managed-by: raw-applicationset
+        naas.io/env: test
+    spec:
+      project: '{{trimPrefix "team-" .repository}}'
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: "{{.path.path}}"
+        directory:
+          recurse: true
+      destination:
+        name: test
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-raw-acceptance
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              github:
+                organization: naastest
+                tokenRef:
+                  secretName: argocd-scm-token
+                  key: token
+              filters:
+                - repositoryMatch: "^team-"
+                  branchMatch: "^main$"
+                  pathsExist: ["apps/raw/acceptance"]
+              cloneProtocol: https
+          - git:
+              repoURL: "{{.url}}"
+              revision: "{{.branch}}"
+              directories:
+                - path: "apps/raw/acceptance/*"
+  template:
+    metadata:
+      name: "raw-{{trimPrefix `team-` .repository}}-{{.path.basename}}-acceptance"
+      labels:
+        naas.io/managed-by: raw-applicationset
+        naas.io/env: acceptance
+    spec:
+      project: '{{trimPrefix "team-" .repository}}'
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: "{{.path.path}}"
+        directory:
+          recurse: true
+      destination:
+        name: acceptance
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenant-apps-raw-production
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              github:
+                organization: naastest
+                tokenRef:
+                  secretName: argocd-scm-token
+                  key: token
+              filters:
+                - repositoryMatch: "^team-"
+                  branchMatch: "^main$"
+                  pathsExist: ["apps/raw/production"]
+              cloneProtocol: https
+          - git:
+              repoURL: "{{.url}}"
+              revision: "{{.branch}}"
+              directories:
+                - path: "apps/raw/production/*"
+  template:
+    metadata:
+      name: "raw-{{trimPrefix `team-` .repository}}-{{.path.basename}}-production"
+      labels:
+        naas.io/managed-by: raw-applicationset
+        naas.io/env: production
+    spec:
+      project: '{{trimPrefix "team-" .repository}}'
+      source:
+        repoURL: "{{.url}}"
+        targetRevision: "{{.branch}}"
+        path: "{{.path.path}}"
+        directory:
+          recurse: true
+      destination:
+        name: production
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
