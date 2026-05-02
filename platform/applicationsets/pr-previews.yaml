@@ -15,6 +15,10 @@
 #   5. Dev tests at whatever URL their app exposes in that namespace
 #   6. PR merged → Application deleted → namespace pruned
 #
+# NAMESPACE REQUIREMENT: manifests in apps/dev/ must NOT hardcode a namespace.
+# Use Kustomize overlays so ArgoCD can inject the preview namespace at deploy time.
+# See docs/pr-previews.md for the full overlay structure.
+#
 # To add a new team: copy this block and change `repo` and the team label.
 # One ApplicationSet per team repo is required (pullRequest generator is per-repo).
 ---

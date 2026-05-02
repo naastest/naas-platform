@@ -97,6 +97,13 @@ kubectl config set-credentials oidc \
 - Log in with your Authentik credentials
 - You will see your team's AppProject and can create Applications targeting your namespaces
 
+## PR Preview Environments
+
+Every pull request on your team repo gets an isolated preview namespace automatically.
+See [pr-previews.md](pr-previews.md) for setup requirements — in particular, resources in
+`apps/dev/` must **not** hardcode a namespace (use Kustomize overlays instead) or they
+will land in your live dev namespace rather than the preview namespace.
+
 ## Requesting Additional Environments
 
 For each additional DTAP environment (test, acceptance, production), open a separate PR adding:
