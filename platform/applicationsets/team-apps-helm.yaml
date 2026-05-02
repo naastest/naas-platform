@@ -20,8 +20,10 @@
 # The release name (and all Kubernetes resource names) is derived from the
 # values file stem: apps/helm/dev/checkout-service.yaml → "checkout-service".
 #
-# Chart version is pinned here. Bump it in all four ApplicationSets when
-# releasing a new chart version.
+# Multi-source design: the chart comes from naastest/helm-charts (git path),
+# and the values file comes directly from the team repo. This avoids the
+# valuesObject interpolation problem (nested YAML structures from the git
+# file generator render as Go map strings, not proper YAML).
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -57,22 +59,17 @@ spec:
         naas.io/env: dev
     spec:
       project: '{{trimPrefix "team-" .repository}}'
-      source:
-        repoURL: "https://github.com/naastest/helm-charts"
-        chart: service
-        targetRevision: "0.1.0"
-        helm:
-          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
-          valuesObject:
-            image: "{{.image}}"
-            containerPort: '{{.containerPort | default "8080"}}'
-            replicaCount: '{{.replicaCount | default "1"}}'
-            resources: "{{.resources}}"
-            probes: '{{.probes | default "{}"}}'
-            hpa: '{{.hpa | default "{}"}}'
-            pdb: '{{.pdb | default "{}"}}'
-            ingress: '{{.ingress | default "{}"}}'
-            env: '{{.env | default "{}"}}'
+      sources:
+        - repoURL: "https://github.com/naastest/helm-charts"
+          path: charts/service
+          targetRevision: HEAD
+          helm:
+            releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
+            valueFiles:
+              - "$values/{{.path}}"
+        - repoURL: "{{.url}}"
+          targetRevision: "{{.branch}}"
+          ref: values
       destination:
         name: dev
         namespace: "{{.namespace}}"
@@ -117,22 +114,17 @@ spec:
         naas.io/env: test
     spec:
       project: '{{trimPrefix "team-" .repository}}'
-      source:
-        repoURL: "https://github.com/naastest/helm-charts"
-        chart: service
-        targetRevision: "0.1.0"
-        helm:
-          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
-          valuesObject:
-            image: "{{.image}}"
-            containerPort: '{{.containerPort | default "8080"}}'
-            replicaCount: '{{.replicaCount | default "1"}}'
-            resources: "{{.resources}}"
-            probes: '{{.probes | default "{}"}}'
-            hpa: '{{.hpa | default "{}"}}'
-            pdb: '{{.pdb | default "{}"}}'
-            ingress: '{{.ingress | default "{}"}}'
-            env: '{{.env | default "{}"}}'
+      sources:
+        - repoURL: "https://github.com/naastest/helm-charts"
+          path: charts/service
+          targetRevision: HEAD
+          helm:
+            releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
+            valueFiles:
+              - "$values/{{.path}}"
+        - repoURL: "{{.url}}"
+          targetRevision: "{{.branch}}"
+          ref: values
       destination:
         name: test
         namespace: "{{.namespace}}"
@@ -177,22 +169,17 @@ spec:
         naas.io/env: acceptance
     spec:
       project: '{{trimPrefix "team-" .repository}}'
-      source:
-        repoURL: "https://github.com/naastest/helm-charts"
-        chart: service
-        targetRevision: "0.1.0"
-        helm:
-          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
-          valuesObject:
-            image: "{{.image}}"
-            containerPort: '{{.containerPort | default "8080"}}'
-            replicaCount: '{{.replicaCount | default "1"}}'
-            resources: "{{.resources}}"
-            probes: '{{.probes | default "{}"}}'
-            hpa: '{{.hpa | default "{}"}}'
-            pdb: '{{.pdb | default "{}"}}'
-            ingress: '{{.ingress | default "{}"}}'
-            env: '{{.env | default "{}"}}'
+      sources:
+        - repoURL: "https://github.com/naastest/helm-charts"
+          path: charts/service
+          targetRevision: HEAD
+          helm:
+            releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
+            valueFiles:
+              - "$values/{{.path}}"
+        - repoURL: "{{.url}}"
+          targetRevision: "{{.branch}}"
+          ref: values
       destination:
         name: acceptance
         namespace: "{{.namespace}}"
@@ -237,22 +224,17 @@ spec:
         naas.io/env: production
     spec:
       project: '{{trimPrefix "team-" .repository}}'
-      source:
-        repoURL: "https://github.com/naastest/helm-charts"
-        chart: service
-        targetRevision: "0.1.0"
-        helm:
-          releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
-          valuesObject:
-            image: "{{.image}}"
-            containerPort: '{{.containerPort | default "8080"}}'
-            replicaCount: '{{.replicaCount | default "1"}}'
-            resources: "{{.resources}}"
-            probes: '{{.probes | default "{}"}}'
-            hpa: '{{.hpa | default "{}"}}'
-            pdb: '{{.pdb | default "{}"}}'
-            ingress: '{{.ingress | default "{}"}}'
-            env: '{{.env | default "{}"}}'
+      sources:
+        - repoURL: "https://github.com/naastest/helm-charts"
+          path: charts/service
+          targetRevision: HEAD
+          helm:
+            releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
+            valueFiles:
+              - "$values/{{.path}}"
+        - repoURL: "{{.url}}"
+          targetRevision: "{{.branch}}"
+          ref: values
       destination:
         name: production
         namespace: "{{.namespace}}"
