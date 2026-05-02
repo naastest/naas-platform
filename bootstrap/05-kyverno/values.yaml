@@ -1,3 +1,16 @@
+# bitnami no longer publishes versioned tags for free — use registry.k8s.io/kubectl instead
+# These hooks run post-upgrade to clean stale reports/webhooks
+policyReportsCleanup:
+  image:
+    registry: registry.k8s.io
+    repository: kubectl
+    tag: "v1.31.0"
+webhooksCleanup:
+  image:
+    registry: registry.k8s.io
+    repository: kubectl
+    tag: "v1.31.0"
+
 admissionController:
   replicas: 1   # single-replica for local dev
 backgroundController:
