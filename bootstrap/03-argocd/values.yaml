@@ -60,4 +60,95 @@ applicationSet:
   enabled: true
 
 notifications:
-  enabled: false
+  enabled: true
+
+  cm:
+    create: true
+
+  secret:
+    create: false   # apply argocd-notifications-secret manually (see docs/local-dev.md)
+
+  context:
+    argocdUrl: http://argocd.naas.local
+
+  notifiers:
+    service.github: |
+      token: $github-token
+    service.webhook.github-comment: |
+      url: https://api.github.com
+      headers:
+        - name: Authorization
+          value: "token $github-token"
+        - name: Content-Type
+          value: application/json
+        - name: Accept
+          value: application/vnd.github.v3+json
+
+  triggers:
+    trigger.on-preview-deployed: |
+      - when: >-
+          app.status.health.status == 'Healthy' &&
+          app.status.sync.status == 'Synced' &&
+          has(app.metadata.annotations) &&
+          has(app.metadata.annotations['preview.naas.io/pr-number'])
+        oncePer: app.status.sync.revision
+        send: [preview-deployed]
+    trigger.on-preview-degraded: |
+      - when: >-
+          app.status.health.status == 'Degraded' &&
+          has(app.metadata.annotations) &&
+          has(app.metadata.annotations['preview.naas.io/pr-number'])
+        oncePer: app.status.sync.revision
+        send: [preview-degraded]
+    trigger.on-preview-sync-failed: |
+      - when: >-
+          app.status.operationState != nil &&
+          app.status.operationState.phase == 'Failed' &&
+          has(app.metadata.annotations) &&
+          has(app.metadata.annotations['preview.naas.io/pr-number'])
+        oncePer: app.status.operationState.startedAt
+        send: [preview-sync-failed]
+
+  templates:
+    template.preview-deployed: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.sync.revision}}"
+        status:
+          state: success
+          label: "continuous-deployment/preview"
+          targetURL: "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}"
+      webhook:
+        github-comment:
+          method: POST
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/issues/{{index .app.metadata.annotations "preview.naas.io/pr-number"}}/comments
+          body: |
+            {"body": "## 🚀 Preview environment ready\n\n| | |\n|---|---|\n| **App** | `{{.app.metadata.name}}` |\n| **Namespace** | `{{.app.spec.destination.namespace}}` |\n| **Sync** | {{.app.status.sync.status}} |\n| **Health** | {{.app.status.health.status}} |\n| **ArgoCD** | [Open →]({{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}) |{{if .app.status.summary.externalURLs}}\n\n**URLs:**\n{{range .app.status.summary.externalURLs}}- {{.}}\n{{end}}{{end}}"}
+    template.preview-degraded: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.sync.revision}}"
+        status:
+          state: failure
+          label: "continuous-deployment/preview"
+          targetURL: "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}"
+      webhook:
+        github-comment:
+          method: POST
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/issues/{{index .app.metadata.annotations "preview.naas.io/pr-number"}}/comments
+          body: |
+            {"body": "## ⚠️ Preview environment degraded\n\n| | |\n|---|---|\n| **App** | `{{.app.metadata.name}}` |\n| **Namespace** | `{{.app.spec.destination.namespace}}` |\n| **Health** | {{.app.status.health.status}} |\n| **ArgoCD** | [Open →]({{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}) |"}
+    template.preview-sync-failed: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: failure
+          label: "continuous-deployment/preview"
+          targetURL: "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}"
+      webhook:
+        github-comment:
+          method: POST
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/issues/{{index .app.metadata.annotations "preview.naas.io/pr-number"}}/comments
+          body: |
+            {"body": "## ❌ Preview sync failed\n\n| | |\n|---|---|\n| **App** | `{{.app.metadata.name}}` |\n| **Namespace** | `{{.app.spec.destination.namespace}}` |\n| **ArgoCD** | [Open →]({{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}) |"}

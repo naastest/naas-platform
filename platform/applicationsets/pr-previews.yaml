@@ -45,6 +45,15 @@ spec:
         naas.io/managed-by: pr-preview
         naas.io/team: payments
         naas.io/env: dev
+      annotations:
+        preview.naas.io/pr-number: "{{.number}}"
+        preview.naas.io/repo: "naastest/team-payments"
+        notifications.argoproj.io/subscribe.on-preview-deployed.github: ""
+        notifications.argoproj.io/subscribe.on-preview-deployed.github-comment: ""
+        notifications.argoproj.io/subscribe.on-preview-degraded.github: ""
+        notifications.argoproj.io/subscribe.on-preview-degraded.github-comment: ""
+        notifications.argoproj.io/subscribe.on-preview-sync-failed.github: ""
+        notifications.argoproj.io/subscribe.on-preview-sync-failed.github-comment: ""
     spec:
       project: payments
       source:
