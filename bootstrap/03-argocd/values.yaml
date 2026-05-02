@@ -1,6 +1,46 @@
 global:
   domain: argocd.naas.local
 
+configs:
+  cm:
+    url: http://argocd.naas.local
+    application.resourceTrackingMethod: annotation
+    oidc.config: |
+      name: Authentik
+      issuer: http://authentik.naas.local/application/o/argocd/
+      clientID: argocd
+      clientSecret: $argocd-authentik-secret:oidc.clientSecret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+        - groups
+      groupsClaim: groups
+  rbac:
+    policy.default: role:readonly
+    scopes: "[groups, email]"
+    policy.csv: |
+      # Platform team has full admin access
+      g, naas-platform-admin, role:admin
+
+      # Per-team roles — add a line pair for each team that is onboarded.
+      # Pattern: g, naas-{team}-admin, role:{team}-admin
+      #          g, naas-{team}-dev,   role:{team}-dev
+
+      # Payments team
+      g, naas-payments-admin, role:payments-admin
+      g, naas-payments-dev,   role:payments-dev
+
+      p, role:payments-admin, applications, *,      payments/*, allow
+      p, role:payments-admin, applicationsets, get, payments/*, allow
+      p, role:payments-dev,   applications, get,    payments/*, allow
+      p, role:payments-dev,   applications, sync,   payments/*, allow
+      p, role:payments-dev,   applications, override, payments/*, allow
+  params:
+    server.insecure: true
+  secret:
+    argocdServerAdminPassword: ""
+
 server:
   ingress:
     enabled: true
@@ -10,31 +50,6 @@ server:
       nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
     tls: false
-  config:
-    # OIDC for Authentik — clientSecret is set via Sealed Secret after Authentik is up
-    oidc.config: |
-      name: Authentik
-      issuer: https://authentik.naas.local/application/o/argocd/
-      clientID: argocd
-      clientSecret: $oidc.authentik.clientSecret
-      requestedScopes:
-        - openid
-        - profile
-        - email
-        - groups
-      groupsClaim: groups
-  rbacConfig:
-    policy.default: role:readonly
-    policy.csv: |
-      g, naas-platform-admin, role:admin
-    scopes: "[groups, email]"
-
-configs:
-  params:
-    server.insecure: true
-  secret:
-    # Rotate after first login. ArgoCD creates argocd-initial-admin-secret automatically.
-    argocdServerAdminPassword: ""
 
 repoServer:
   env:
@@ -45,4 +60,4 @@ applicationSet:
   enabled: true
 
 notifications:
-  enabled: false   # enable when notification targets are configured
+  enabled: false
