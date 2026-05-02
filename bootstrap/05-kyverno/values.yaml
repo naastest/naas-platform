@@ -1,15 +1,11 @@
-# bitnami no longer publishes versioned tags for free — use registry.k8s.io/kubectl instead
-# These hooks run post-upgrade to clean stale reports/webhooks
+# Disable post-upgrade cleanup hooks — they use hook-delete-policy: hook-succeeded
+# which deletes the Job before ArgoCD records completion, causing a permanent
+# "waiting for hook" stuck state on every Kyverno upgrade.
+# Stale PolicyReports and webhook configs are harmless in local dev.
 policyReportsCleanup:
-  image:
-    registry: registry.k8s.io
-    repository: kubectl
-    tag: "v1.31.0"
+  enabled: false
 webhooksCleanup:
-  image:
-    registry: registry.k8s.io
-    repository: kubectl
-    tag: "v1.31.0"
+  enabled: false
 
 admissionController:
   replicas: 1   # single-replica for local dev
