@@ -66,7 +66,7 @@ spec:
           helm:
             releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
             valueFiles:
-              - "$values/{{.path}}"
+              - "$values/{{.path.path}}/{{.path.filename}}"
         - repoURL: "{{.url}}"
           targetRevision: "{{.branch}}"
           ref: values
@@ -121,7 +121,7 @@ spec:
           helm:
             releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
             valueFiles:
-              - "$values/{{.path}}"
+              - "$values/{{.path.path}}/{{.path.filename}}"
         - repoURL: "{{.url}}"
           targetRevision: "{{.branch}}"
           ref: values
@@ -176,7 +176,7 @@ spec:
           helm:
             releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
             valueFiles:
-              - "$values/{{.path}}"
+              - "$values/{{.path.path}}/{{.path.filename}}"
         - repoURL: "{{.url}}"
           targetRevision: "{{.branch}}"
           ref: values
@@ -231,7 +231,7 @@ spec:
           helm:
             releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
             valueFiles:
-              - "$values/{{.path}}"
+              - "$values/{{.path.path}}/{{.path.filename}}"
         - repoURL: "{{.url}}"
           targetRevision: "{{.branch}}"
           ref: values
