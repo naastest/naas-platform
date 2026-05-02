@@ -89,6 +89,7 @@ spec:
     - "https://projectcapsule.github.io/charts"
     - "https://kyverno.github.io/kyverno/"
     - "https://charts.goauthentik.io"
+    - "https://argoproj.github.io/argo-helm"
 
   destinations:
     - name: dev
