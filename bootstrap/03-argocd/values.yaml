@@ -94,13 +94,13 @@ notifications:
           app.status.health.status == 'Healthy' &&
           app.status.sync.status == 'Synced' &&
           'preview.naas.io/pr-number' in app.metadata.annotations
-        oncePer: app.status.sync.revision
+        oncePer: "{{index .app.status.sync.revisions 1}}"
         send: [preview-deployed]
     trigger.on-preview-degraded: |
       - when: >-
           app.status.health.status == 'Degraded' &&
           'preview.naas.io/pr-number' in app.metadata.annotations
-        oncePer: app.status.sync.revision
+        oncePer: "{{index .app.status.sync.revisions 1}}"
         send: [preview-degraded]
     trigger.on-preview-sync-failed: |
       - when: >-
@@ -115,7 +115,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{.app.status.sync.revision}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
           body: |
             {"state": "success", "context": "continuous-deployment/preview", "description": "Preview deployed", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:
@@ -127,7 +127,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{.app.status.sync.revision}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
           body: |
             {"state": "failure", "context": "continuous-deployment/preview", "description": "Preview degraded", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:
@@ -139,7 +139,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{.app.status.operationState.syncResult.revision}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
           body: |
             {"state": "failure", "context": "continuous-deployment/preview", "description": "Preview sync failed", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:
