@@ -66,6 +66,13 @@ spec:
             version: 0.12.0
             valuesPath: bootstrap/07-capsule-proxy/values.yaml
 
+          - name: authentik
+            namespace: authentik
+            repoURL: https://charts.goauthentik.io
+            chart: authentik
+            version: 2026.2.2
+            valuesPath: bootstrap/06-authentik/values.yaml
+
   template:
     metadata:
       name: "infra-{{.name}}"
