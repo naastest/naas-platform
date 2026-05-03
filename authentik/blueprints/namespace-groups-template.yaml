@@ -62,6 +62,15 @@ entries:
   # ── Manager Role ─────────────────────────────────────────────────────────────
   # Grants the team-admin group ability to manage membership of the 3 namespace
   # groups without needing full Authentik admin access.
+  #
+  # Authentik 2023.6+: any user with at least one permission (even object-level)
+  # automatically gets access to the admin UI scoped to what they can see.
+  # No is_staff or is_superuser flag needed.
+  #
+  # NOTE: role-to-group assignment cannot be done here because blueprint
+  # state:present on a group replaces the entire roles list, which would drop
+  # roles added by other namespace blueprints. The apply-namespace-blueprint.py
+  # script handles this with an additive PATCH on Group.roles instead.
 
   - model: authentik_rbac.role
     state: present
@@ -69,7 +78,3 @@ entries:
       name: !Format ["naas-%(namespace)s-manager", {namespace: !Context namespace}]
     attrs:
       name: !Format ["naas-%(namespace)s-manager", {namespace: !Context namespace}]
-      # Assign this role to the team-wide admin group so all team admins can
-      # manage membership in this namespace's groups.
-      groups:
-        - !Find [authentik_core.group, [name, !Format ["naas-%(team)s-admin", {team: !Context team}]]]

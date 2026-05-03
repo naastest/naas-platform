@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rbac-test
+  labels:
+    app: rbac-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rbac-test
+  template:
+    metadata:
+      labels:
+        app: rbac-test
+    spec:
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.10
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65534
+          resources:
+            limits:
+              cpu: 10m
+              memory: 16Mi
+            requests:
+              cpu: 5m
+              memory: 8Mi

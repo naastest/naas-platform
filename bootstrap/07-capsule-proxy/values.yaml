@@ -83,6 +83,10 @@ gangplank:
     className: nginx
     annotations:
       cert-manager.io/cluster-issuer: naas-ca
+      # Gangplank's callback response embeds a kubeconfig in the headers,
+      # which exceeds nginx's default 4k proxy buffer and causes 502.
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "32k"
+      nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
     hosts:
       - host: gangplank.naas.local
         paths:

@@ -7,7 +7,7 @@ configs:
     application.resourceTrackingMethod: annotation
     oidc.config: |
       name: Authentik
-      issuer: http://authentik.naas.local/application/o/argocd/
+      issuer: https://authentik.naas.local/application/o/argocd/
       clientID: argocd
       clientSecret: $argocd-authentik-secret:oidc.clientSecret
       requestedScopes:
@@ -16,6 +16,17 @@ configs:
         - email
         - groups
       groupsClaim: groups
+      rootCA: |
+        -----BEGIN CERTIFICATE-----
+        MIIBcTCCARagAwIBAgIQCKegPpkLiEPNFZMqKmI6hjAKBggqhkjOPQQDAjAYMRYw
+        FAYDVQQDEw1uYWFzLWxvY2FsLWNhMB4XDTI2MDQzMDIxNTIyMloXDTI2MDcyOTIx
+        NTIyMlowGDEWMBQGA1UEAxMNbmFhcy1sb2NhbC1jYTBZMBMGByqGSM49AgEGCCqG
+        SM49AwEHA0IABKLyO/4ci1EYoUk7wiixQdqV8GHdonzf3/l4QrVMyrVUH/EHqkFm
+        d2XTW0kexUY4ruvPyenpz1F1CiasVJVT3NujQjBAMA4GA1UdDwEB/wQEAwICpDAP
+        BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBTZce9l1crGhjFnPjWD76OpKLfnCDAK
+        BggqhkjOPQQDAgNJADBGAiEAlIrgB3FTZ3S+v6FOdSFqdai8uKwR4CuqePabtKy0
+        N3QCIQDltkiCfKS/s0VjeBJmhxs08ZnzlKy69BihqeAKnZAkag==
+        -----END CERTIFICATE-----
   rbac:
     policy.default: role:readonly
     scopes: "[groups, email]"

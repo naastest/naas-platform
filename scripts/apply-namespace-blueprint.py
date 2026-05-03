@@ -32,12 +32,22 @@ BASE_URL = os.environ.get("AUTHENTIK_URL", "https://authentik.naas.local").rstri
 CA_CERT = os.environ.get("AUTHENTIK_CA_CERT", str(Path.home() / ".kube/naas-local-ca.crt"))
 TEMPLATE = Path(__file__).parent.parent / "authentik/blueprints/namespace-groups-template.yaml"
 
-# Permissions the manager Role gets on each namespace group
+# Object-level permissions the manager Role gets on each namespace group
 MANAGER_PERMISSIONS = [
     "authentik_core.add_user_to_group",
     "authentik_core.remove_user_from_group",
     "authentik_core.view_group",
     "authentik_core.change_group",
+]
+
+# Global (non-object) permissions the manager Role gets.
+# access_admin_interface: required for the admin UI button to appear.
+# view_user: required to list/search users when adding them to a group.
+#   (object-level add_user_to_group alone isn't enough — the user picker calls
+#    GET /api/v3/core/users/ which requires global view_user)
+MANAGER_GLOBAL_PERMISSIONS = [
+    "authentik_rbac.access_admin_interface",
+    "authentik_core.view_user",
 ]
 
 
@@ -95,7 +105,13 @@ def ensure_group(session: requests.Session, name: str, namespace: str, team: str
 
 
 def ensure_role(session: requests.Session, role_name: str, team_admin_group_pk: str) -> str:
-    """Create manager Role if it doesn't exist and assign team-admin group to it."""
+    """Create manager Role if it doesn't exist and assign it to the team-admin group.
+
+    Authentik's RBAC model: roles are assigned via Group.roles (M2M), not Role.groups.
+    Patching the group (not the role) is the correct direction.
+    Any group member with at least one role/permission gets access to the Authentik
+    admin UI, scoped to the objects they have permissions on (Authentik 2023.6+).
+    """
     r = session.get(f"{BASE_URL}/api/v3/rbac/roles/", params={"name": role_name}, verify=CA_CERT)
     r.raise_for_status()
     results = r.json()["results"]
@@ -113,21 +129,16 @@ def ensure_role(session: requests.Session, role_name: str, team_admin_group_pk: 
         role_pk = r.json()["pk"]
         print(f"  created role: {role_name} ({role_pk})")
 
-    # Assign the team-admin group to this role (idempotent: 400 = already assigned)
-    r = session.post(
-        f"{BASE_URL}/api/v3/rbac/roles/{role_pk}/add_user/",
-        json={"pk": team_admin_group_pk},  # group pk treated as user-of-role
-        verify=CA_CERT,
-    )
-    # Use groups M2M directly on the role via PATCH instead
-    # Fetch current groups on role
-    r2 = session.get(f"{BASE_URL}/api/v3/rbac/roles/{role_pk}/", verify=CA_CERT)
+    # Add the role to the team-admin group's roles list (append, don't replace).
+    r2 = session.get(f"{BASE_URL}/api/v3/core/groups/{team_admin_group_pk}/", verify=CA_CERT)
     r2.raise_for_status()
-    existing_groups = [g["pk"] for g in r2.json().get("groups", [])]
-    if team_admin_group_pk not in existing_groups:
+    raw_roles = r2.json().get("roles", [])
+    # API may return roles as list of PKs or list of objects depending on serializer depth
+    existing_role_pks = [r["pk"] if isinstance(r, dict) else r for r in raw_roles]
+    if role_pk not in existing_role_pks:
         r3 = session.patch(
-            f"{BASE_URL}/api/v3/rbac/roles/{role_pk}/",
-            json={"groups": existing_groups + [team_admin_group_pk]},
+            f"{BASE_URL}/api/v3/core/groups/{team_admin_group_pk}/",
+            json={"roles": existing_role_pks + [role_pk]},
             verify=CA_CERT,
         )
         if r3.ok:
@@ -153,9 +164,26 @@ def grant_object_permissions(
             verify=CA_CERT,
         )
         if r.ok:
-            print(f"  ✓ permissions granted on group {group_pk}")
+            print(f"  ✓ object permissions granted on group {group_pk}")
         else:
-            print(f"  ! permissions on {group_pk}: {r.status_code} {r.text[:100]}")
+            print(f"  ! object permissions on {group_pk}: {r.status_code} {r.text[:100]}")
+
+
+def grant_global_permissions(session: requests.Session, role_pk: str) -> None:
+    """Grant global (non-object) permissions to the manager Role.
+
+    access_admin_interface is required for the Authentik admin UI button to appear.
+    Without it, is_staff stays False and users see only the user portal.
+    """
+    r = session.post(
+        f"{BASE_URL}/api/v3/rbac/permissions/assigned_by_roles/{role_pk}/assign/",
+        json={"permissions": MANAGER_GLOBAL_PERMISSIONS},
+        verify=CA_CERT,
+    )
+    if r.ok:
+        print(f"  ✓ global permissions granted: {MANAGER_GLOBAL_PERMISSIONS}")
+    else:
+        print(f"  ! global permissions: {r.status_code} {r.text[:100]}")
 
 
 def write_blueprint_file(namespace: str, team: str) -> Path:
@@ -215,21 +243,33 @@ def main():
     dev_pk = ensure_group(session, f"naas-{namespace}-dev", namespace, team, "developer")
     viewer_pk = ensure_group(session, f"naas-{namespace}-viewer", namespace, team, "viewer")
 
-    print("\nResolving team-admin group...")
-    r = session.get(f"{BASE_URL}/api/v3/core/groups/", params={"name": f"naas-{team}-admin"}, verify=CA_CERT)
-    r.raise_for_status()
-    results = r.json()["results"]
-    if not results:
-        print(f"  WARNING: naas-{team}-admin group not found — create it first")
+    print("\nResolving team-level groups...")
+    team_group_pks = []
+    team_admin_pk = None
+    for suffix in ("admin", "dev", "viewer"):
+        r = session.get(f"{BASE_URL}/api/v3/core/groups/", params={"name": f"naas-{team}-{suffix}"}, verify=CA_CERT)
+        r.raise_for_status()
+        results = r.json()["results"]
+        if results:
+            pk = results[0]["pk"]
+            team_group_pks.append(pk)
+            if suffix == "admin":
+                team_admin_pk = pk
+            print(f"  found: naas-{team}-{suffix} ({pk})")
+        else:
+            print(f"  WARNING: naas-{team}-{suffix} not found — skipping")
+    if not team_admin_pk:
+        print(f"  ERROR: naas-{team}-admin group not found — create it first")
         sys.exit(1)
-    team_admin_pk = results[0]["pk"]
-    print(f"  found: naas-{team}-admin ({team_admin_pk})")
 
     print("\nCreating manager role...")
     role_pk = ensure_role(session, f"naas-{namespace}-manager", team_admin_pk)
 
-    print("\nGranting object-level permissions...")
-    grant_object_permissions(session, role_pk, [admin_pk, dev_pk, viewer_pk])
+    print("\nGranting object-level permissions (namespace groups + tenant groups)...")
+    grant_object_permissions(session, role_pk, [admin_pk, dev_pk, viewer_pk] + team_group_pks)
+
+    print("\nGranting global permissions...")
+    grant_global_permissions(session, role_pk)
 
     print("\nWriting blueprint file...")
     out = write_blueprint_file(namespace, team)
