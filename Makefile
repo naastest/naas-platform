@@ -5,7 +5,7 @@ SKAFFOLD_PROFILE ?= local
 CYAN  := \033[36m
 RESET := \033[0m
 
-.PHONY: up down reset hosts bootstrap fix-ca coredns-patch fix-kubeconfig tunnel \
+.PHONY: up down reset hosts bootstrap fix-ca coredns-patch fix-kubeconfig fix-admin-context tunnel \
         apply-namespace-blueprint status logs kyverno-test validate-ns \
         ns-add help
 
@@ -42,6 +42,25 @@ fix-kubeconfig: ## Fix naas-local kubeconfig user credentials (minikube update-c
 	@kubectl config set-cluster $(PROFILE) \
 	  --certificate-authority=$(HOME)/.minikube/ca.crt
 	@echo "    naas-local kubeconfig credentials restored."
+	@$(MAKE) fix-admin-context
+
+fix-admin-context: ## Refresh naas-local-admin context (direct API server, no proxy — run after restart)
+	@echo "==> Refreshing naas-local-admin context..."
+	@PORT=$$(docker port $(PROFILE) 8443 2>/dev/null | grep '127.0.0.1' | cut -d: -f2); \
+	 if [ -z "$$PORT" ]; then echo "  ERROR: could not find API server port (is minikube running?)"; exit 1; fi; \
+	 kubectl config set-cluster naas-local-direct \
+	   --server=https://127.0.0.1:$$PORT \
+	   --certificate-authority=$(HOME)/.minikube/ca.crt \
+	   --embed-certs=true; \
+	 kubectl config set-credentials naas-local-admin \
+	   --client-certificate=$(HOME)/.minikube/profiles/$(PROFILE)/client.crt \
+	   --client-key=$(HOME)/.minikube/profiles/$(PROFILE)/client.key \
+	   --embed-certs=true; \
+	 kubectl config set-context naas-local-admin \
+	   --cluster=naas-local-direct \
+	   --user=naas-local-admin \
+	   --namespace=default; \
+	 echo "    naas-local-admin -> https://127.0.0.1:$$PORT (direct, no proxy)"
 
 hosts: ## Configure /etc/resolver/naas.local for *.naas.local DNS (macOS)
 	@./bootstrap/configure-hosts.sh
