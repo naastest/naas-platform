@@ -3,7 +3,7 @@ global:
 
 configs:
   cm:
-    url: http://argocd.naas.local
+    url: https://argocd.naas.local
     application.resourceTrackingMethod: annotation
     oidc.config: |
       name: Authentik
