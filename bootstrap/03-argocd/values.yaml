@@ -28,7 +28,7 @@ configs:
         N3QCIQDltkiCfKS/s0VjeBJmhxs08ZnzlKy69BihqeAKnZAkag==
         -----END CERTIFICATE-----
   rbac:
-    policy.default: role:readonly
+    policy.default: ""
     scopes: "[groups, email]"
     policy.csv: |
       # Platform team has full admin access
