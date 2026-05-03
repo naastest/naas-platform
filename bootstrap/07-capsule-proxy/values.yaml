@@ -1,4 +1,9 @@
 options:
+  # Enable cross-namespace resource listing (kubectl get pods -A).
+  # The catchall handler would otherwise apply a broken pod-label filter; this gate
+  # bypasses it and lets Kubernetes RBAC (RoleBindings) scope the results instead.
+  extraArgs:
+    - "--feature-gates=ProxyAllNamespaced=true"
   # Use the same username claim as the kube-apiserver
   oidcUsernameClaim: preferred_username
   # Bearer token from the Gangplank id_token is forwarded to the kube-apiserver.
