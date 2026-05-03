@@ -125,6 +125,21 @@ kubectl create secret generic argocd-scm-token \
 
 For local Minikube, create the secret after `make bootstrap`. In production, seal it with `kubeseal` and commit the SealedSecret.
 
+## ArgoCD OIDC Secret (Required for Authentik login)
+
+ArgoCD reads the Authentik OIDC client secret from a Kubernetes secret. It must have the label `app.kubernetes.io/part-of=argocd` so ArgoCD's informer watches it; without this label ArgoCD silently ignores the key and sends an empty secret to the token endpoint.
+
+```bash
+kubectl create secret generic argocd-authentik-secret \
+  --from-literal=oidc.clientSecret=YOUR_CLIENT_SECRET \
+  -n argocd \
+  --dry-run=client -o yaml \
+  | kubectl label --local -f - app.kubernetes.io/part-of=argocd -o yaml \
+  | kubectl apply -f -
+```
+
+The client secret must match what is configured in Authentik's ArgoCD OAuth2 provider.
+
 ## Simulating DTAP Locally
 
 For full DTAP simulation on a single minikube, register it as all 4 cluster targets in ArgoCD:
