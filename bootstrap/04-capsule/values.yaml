@@ -1,14 +1,20 @@
 manager:
   options:
-    # Groups recognized as Capsule users — capsule-proxy filters namespace lists for these groups.
-    # Add all three role groups for every tenant team here.
-    # (New team onboarding: append naas-{team}-admin, naas-{team}-dev, naas-{team}-viewer)
-    capsuleUserGroups:
-      - naas-platform-admin
-      - naas-payments-admin
-      - naas-payments-dev
-      - naas-payments-viewer
-      - naas-frontend-admin
-      - naas-frontend-dev
-      - naas-frontend-viewer
-    enableTLSReconciler: true
+    # Users/Groups recognized as Capsule users — capsule-proxy filters namespace lists for these.
+    # In v0.12+ the old capsuleUserGroups list became a structured users list.
+    # (New team onboarding: append a Group entry for naas-{team}-admin/dev/viewer)
+    users:
+      - kind: Group
+        name: naas-platform-admin
+      - kind: Group
+        name: naas-payments-admin
+      - kind: Group
+        name: naas-payments-dev
+      - kind: Group
+        name: naas-payments-viewer
+      - kind: Group
+        name: naas-frontend-admin
+      - kind: Group
+        name: naas-frontend-dev
+      - kind: Group
+        name: naas-frontend-viewer
