@@ -1,0 +1,38 @@
+---
+# capsule-proxy v0.12 cross-namespace resource listing (kubectl get pods -A) uses a
+# label selector "capsule.clastix.io/managed-by in (<tenant>)" on the upstream request.
+# Capsule itself no longer stamps this label (the watchdog was removed in v0.12).
+# This policy restores the behaviour at admission time so the proxy filter works.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-capsule-managed-by-pod-label
+  annotations:
+    policies.kyverno.io/title: "Stamp capsule.clastix.io/managed-by on Pods"
+    policies.kyverno.io/category: NaaS Generate
+    policies.kyverno.io/description: >-
+      Adds capsule.clastix.io/managed-by: <tenant> to every Pod so that
+      capsule-proxy v0.12's cross-namespace label filter returns results for
+      kubectl get pods -A. The tenant name is read from the namespace label
+      capsule.clastix.io/tenant.
+spec:
+  rules:
+    - name: add-managed-by-label
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: capsule.clastix.io/tenant
+                    operator: Exists
+      context:
+        - name: tenantName
+          apiCall:
+            urlPath: "/api/v1/namespaces/{{request.object.metadata.namespace}}"
+            jmesPath: "metadata.labels.\"capsule.clastix.io/tenant\""
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              capsule.clastix.io/managed-by: "{{tenantName}}"
