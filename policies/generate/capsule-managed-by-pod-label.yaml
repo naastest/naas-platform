@@ -8,6 +8,7 @@ kind: ClusterPolicy
 metadata:
   name: mutate-capsule-managed-by-pod-label
   annotations:
+    pod-policies.kyverno.io/autogen-controllers: none
     policies.kyverno.io/title: "Stamp capsule.clastix.io/managed-by on Pods"
     policies.kyverno.io/category: NaaS Generate
     policies.kyverno.io/description: >-
