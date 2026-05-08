@@ -36,6 +36,8 @@ spec:
                 tokenRef:
                   secretName: argocd-scm-token
                   key: token
+              filters:
+                - branchMatch: "^preview/"
               requeueAfterSeconds: 120
           - git:
               repoURL: "https://github.com/naastest/team-payments"
