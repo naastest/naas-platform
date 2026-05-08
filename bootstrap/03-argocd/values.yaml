@@ -126,7 +126,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.metadata.annotations "preview.naas.io/git-commit"}}
           body: |
             {"state": "success", "context": "continuous-deployment/preview", "description": "Preview deployed", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:
@@ -138,7 +138,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.metadata.annotations "preview.naas.io/git-commit"}}
           body: |
             {"state": "failure", "context": "continuous-deployment/preview", "description": "Preview degraded", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:
@@ -150,7 +150,7 @@ notifications:
       webhook:
         github-status:
           method: POST
-          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.status.sync.revisions 1}}
+          path: /repos/{{index .app.metadata.annotations "preview.naas.io/repo"}}/statuses/{{index .app.metadata.annotations "preview.naas.io/git-commit"}}
           body: |
             {"state": "failure", "context": "continuous-deployment/preview", "description": "Preview sync failed", "target_url": "http://argocd.naas.local/applications/argocd/{{.app.metadata.name}}"}
         github-comment:

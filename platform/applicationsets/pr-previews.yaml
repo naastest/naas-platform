@@ -55,6 +55,9 @@ spec:
         # Branch is preview/neon-billboard-pr-<N> — extract the source PR number.
         preview.naas.io/pr-number: '{{.branch | trimPrefix "preview/neon-billboard-pr-"}}'
         preview.naas.io/repo: "naastest/neon-billboard"
+        # git_commit is a top-level key written by neon-billboard CI into the
+        # values file so we can post the GitHub status on the right commit SHA.
+        preview.naas.io/git-commit: "{{.git_commit}}"
         notifications.argoproj.io/subscribe.on-preview-deployed.github-status: ""
         notifications.argoproj.io/subscribe.on-preview-deployed.github-comment: ""
         notifications.argoproj.io/subscribe.on-preview-degraded.github-status: ""
