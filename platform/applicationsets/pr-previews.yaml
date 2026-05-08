@@ -71,9 +71,15 @@ spec:
             valueFiles:
               - "$values/{{.path.path}}/{{.path.filename}}"
             valuesObject:
+              image: 'ghcr.io/naastest/neon-billboard:{{.head_sha}}'
               ingress:
                 enabled: true
                 host: '{{.path.filename | trimSuffix ".yaml"}}-pr-{{.number}}.preview.naas.local'
+              env:
+                APP_ENV: preview
+                PR_NUMBER: '{{.number}}'
+                GIT_BRANCH: '{{.branch}}'
+                GIT_COMMIT: '{{.head_sha}}'
         - repoURL: "https://github.com/naastest/team-payments"
           targetRevision: "{{.head_sha}}"
           ref: values
