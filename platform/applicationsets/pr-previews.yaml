@@ -1,25 +1,23 @@
 # PR Preview environments — one Helm Application per service per open PR.
 #
-# Developers add or modify values files under apps/helm/dev/ in their PR branch.
-# ArgoCD detects the PR, reads every apps/helm/dev/*.yaml file from the PR's HEAD,
-# and creates one Application per file using the same service Helm chart as dev/prod.
-# Each Application gets an ingress injected automatically so the URL appears in the
-# PR status comment.
+# Source repos (e.g. naastest/neon-billboard) drive previews via their CI:
+#   1. Dev opens PR on neon-billboard
+#   2. neon-billboard CI builds the image, tags it :<sha>, pushes to GHCR
+#   3. CI opens a draft PR on team-payments (branch preview/neon-billboard-pr-<N>)
+#      containing apps/helm/dev/neon-billboard.yaml with image:<sha>, ingress host,
+#      env vars — a complete values file for this exact commit
+#   4. ArgoCD polls GitHub every 2 min via the pullRequest generator here
+#   5. For each apps/helm/dev/*.yaml on the PR branch, creates one Application:
+#        preview-payments-pr-<N>-neon-billboard
+#   6. Deploys to namespace payments-preview-pr-<N> with ingress:
+#        neon-billboard-pr-<source-PR>.preview.naas.local
+#   7. Push to the source PR → CI updates the branch → ArgoCD re-syncs to new SHA
+#   8. Source PR closed → CI deletes the branch → ArgoCD prunes Application + namespace
 #
-# Flow:
-#   1. Dev opens PR on team-payments (e.g. PR #42)
-#   2. ArgoCD polls GitHub every 2 min via the pullRequest generator
-#   3. For each apps/helm/dev/*.yaml on the PR branch, creates one Application:
-#        preview-payments-pr-42-checkout-service
-#        preview-payments-pr-42-payment-api
-#   4. Each deploys to namespace payments-preview-pr-42 with its own ingress:
-#        checkout-service-pr-42.preview.naas.local
-#        payment-api-pr-42.preview.naas.local
-#   5. ArgoCD posts a PR comment with the ingress URLs
-#   6. PR merged → Applications deleted → namespace pruned
+# The values file is the single source of truth — no valuesObject overrides here.
+# This keeps the ApplicationSet generic and lets each source repo control its own values.
 #
-# To add a new team: copy this block, change the pullRequest.github.repo and update
-# the project/team labels. One ApplicationSet per team repo is required.
+# To add a new team: copy this block, change pullRequest.github.repo and project/team labels.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -52,8 +50,9 @@ spec:
         naas.io/team: payments
         naas.io/env: dev
       annotations:
-        preview.naas.io/pr-number: "{{.number}}"
-        preview.naas.io/repo: "naastest/team-payments"
+        # Branch is preview/neon-billboard-pr-<N> — extract the source PR number.
+        preview.naas.io/pr-number: '{{.branch | trimPrefix "preview/neon-billboard-pr-"}}'
+        preview.naas.io/repo: "naastest/neon-billboard"
         notifications.argoproj.io/subscribe.on-preview-deployed.github-status: ""
         notifications.argoproj.io/subscribe.on-preview-deployed.github-comment: ""
         notifications.argoproj.io/subscribe.on-preview-degraded.github-status: ""
@@ -70,16 +69,9 @@ spec:
             releaseName: '{{.path.filename | trimSuffix ".yaml"}}'
             valueFiles:
               - "$values/{{.path.path}}/{{.path.filename}}"
-            valuesObject:
-              image: 'ghcr.io/naastest/neon-billboard:{{.head_sha}}'
-              ingress:
-                enabled: true
-                host: '{{.path.filename | trimSuffix ".yaml"}}-pr-{{.number}}.preview.naas.local'
-              env:
-                APP_ENV: preview
-                PR_NUMBER: '{{.number}}'
-                GIT_BRANCH: '{{.branch}}'
-                GIT_COMMIT: '{{.head_sha}}'
+            # No valuesObject overrides — image, env, and ingress are written into
+            # the values file by the source repo's CI, so every field reflects
+            # the exact commit SHA and source PR number.
         - repoURL: "https://github.com/naastest/team-payments"
           targetRevision: "{{.head_sha}}"
           ref: values

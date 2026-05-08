@@ -1,0 +1,48 @@
+# Helm values for neon-billboard on the dev cluster (standing environment).
+# Picked up by the tenant-apps-helm-dev ApplicationSet in naas-platform.
+#
+# Preview environments use an identical file written by neon-billboard CI onto
+# a branch preview/neon-billboard-pr-<N>, with image and env overridden per commit.
+image: ghcr.io/naastest/neon-billboard:latest
+namespace: payments-backend-dev
+
+env:
+  APP_ENV: dev
+  GIT_BRANCH: main
+  GIT_COMMIT: latest
+
+ingress:
+  enabled: true
+  host: neon-billboard.naas.local
+
+containerPort: 8080
+
+replicaCount: 1
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: [ALL]
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+probes:
+  enabled: true
+  path: /health
+  readiness:
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 5
+    periodSeconds: 30
+    failureThreshold: 3
